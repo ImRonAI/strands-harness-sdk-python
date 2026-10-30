@@ -118,11 +118,11 @@ function restoreMedia(data: Record<string, unknown>): ImageBlock | DocumentBlock
 function extractText(data: unknown): string | null {
   if (typeof data === 'string') return data
   if (data && typeof data === 'object') {
-    if ('text' in data && typeof (data as Record<string, unknown>).text === 'string') {
-      return (data as Record<string, unknown>).text as string
+    if ('text' in data && typeof (data as Record<string, unknown>)['text'] === 'string') {
+      return (data as Record<string, unknown>)['text'] as string
     }
     if ('json' in data) {
-      return JSON.stringify((data as Record<string, unknown>).json, null, 2)
+      return JSON.stringify((data as Record<string, unknown>)['json'], null, 2)
     }
   }
   return null

@@ -121,7 +121,7 @@ async function listModels(token: string): Promise<string[] | null> {
     signal: AbortSignal.timeout(TIMEOUT_MS),
   })
   if (response.status === 401 || response.status === 403) {
-    if (globalThis.process?.env?.CI === 'true' || globalThis.process?.env?.GITHUB_ACTIONS === 'true') {
+    if (globalThis.process?.env?.['CI'] === 'true' || globalThis.process?.env?.['GITHUB_ACTIONS'] === 'true') {
       throw new Error(`account lacks bedrock-mantle:ListModels (${response.status})`)
     }
     return null

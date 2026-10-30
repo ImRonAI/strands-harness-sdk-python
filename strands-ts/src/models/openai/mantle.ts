@@ -107,7 +107,7 @@ export function resolveMantleRegion(config: BedrockMantleConfig): string {
     return validateRegion(config.region)
   }
 
-  const envRegion = globalThis?.process?.env?.AWS_REGION || globalThis?.process?.env?.AWS_DEFAULT_REGION
+  const envRegion = globalThis?.process?.env?.['AWS_REGION'] || globalThis?.process?.env?.['AWS_DEFAULT_REGION']
   if (envRegion) {
     return validateRegion(envRegion)
   }

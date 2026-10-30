@@ -573,7 +573,7 @@ describe('GoogleModel', () => {
 
       await collectIterator(provider.stream(messages, { systemPrompt: 'You are a helpful assistant' }))
 
-      const config = captured.config as { systemInstruction?: string }
+      const config = captured['config'] as { systemInstruction?: string }
       expect(config.systemInstruction).toBe('You are a helpful assistant')
     })
 
@@ -582,7 +582,7 @@ describe('GoogleModel', () => {
 
       await collectIterator(provider.stream(messages, { systemPrompt: '   ' }))
 
-      const config = captured.config as { systemInstruction?: string }
+      const config = captured['config'] as { systemInstruction?: string }
       expect(config.systemInstruction).toBeUndefined()
     })
   })
@@ -594,7 +594,7 @@ describe('GoogleModel', () => {
 
       await collectIterator(provider.stream(messages))
 
-      const contents = captured.contents as Array<{ role: string; parts: Array<{ text: string }> }>
+      const contents = captured['contents'] as Array<{ role: string; parts: Array<{ text: string }> }>
       expect(contents).toHaveLength(1)
       expect(contents[0]?.role).toBe('user')
       expect(contents[0]?.parts[0]?.text).toBe('Hello')
@@ -610,7 +610,7 @@ describe('GoogleModel', () => {
 
       await collectIterator(provider.stream(messages))
 
-      const contents = captured.contents as Array<{ role: string; parts: Array<{ text: string }> }>
+      const contents = captured['contents'] as Array<{ role: string; parts: Array<{ text: string }> }>
       expect(contents).toHaveLength(3)
       expect(contents[0]?.role).toBe('user')
       expect(contents[1]?.role).toBe('model')
@@ -894,7 +894,7 @@ describe('GoogleModel', () => {
         })
       )
 
-      const config = captured.config as { tools?: unknown[] }
+      const config = captured['config'] as { tools?: unknown[] }
       expect(config.tools).toEqual([
         {
           functionDeclarations: [
@@ -935,7 +935,7 @@ describe('GoogleModel', () => {
         })
       )
 
-      const config = captured.config as {
+      const config = captured['config'] as {
         toolConfig?: { functionCallingConfig?: { mode?: string; allowedFunctionNames?: string[] } }
       }
       expect(config.toolConfig?.functionCallingConfig?.mode).toBe(expectedMode)
@@ -949,7 +949,7 @@ describe('GoogleModel', () => {
 
       await collectIterator(provider.stream(messages))
 
-      const config = captured.config as { tools?: unknown }
+      const config = captured['config'] as { tools?: unknown }
       expect(config.tools).toBeUndefined()
     })
   })
@@ -972,7 +972,7 @@ describe('GoogleModel', () => {
         })
       )
 
-      const config = captured.config as { tools?: unknown[]; toolConfig?: Record<string, unknown> }
+      const config = captured['config'] as { tools?: unknown[] }
       expect(config.tools).toHaveLength(2)
       expect(config.tools![0]).toEqual({
         functionDeclarations: [
@@ -1069,7 +1069,7 @@ describe('GoogleModel', () => {
 
       await collectIterator(provider.stream(messages))
 
-      const config = captured.config as { tools?: unknown[] }
+      const config = captured['config'] as { tools?: unknown[] }
       expect(config.tools).toHaveLength(1)
       expect(config.tools![0]).toEqual({ codeExecution: {} })
     })
@@ -1081,7 +1081,7 @@ describe('GoogleModel', () => {
 
       await collectIterator(provider.stream(messages))
 
-      const config = captured.config as { tools?: unknown }
+      const config = captured['config'] as { tools?: unknown }
       expect(config.tools).toBeUndefined()
     })
   })

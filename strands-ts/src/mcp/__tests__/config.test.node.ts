@@ -26,15 +26,15 @@ vi.mock('@modelcontextprotocol/client', async (importOriginal) => ({
   StreamableHTTPClientTransport: vi.fn(function () {}),
   SSEClientTransport: vi.fn(function () {}),
   Client: vi.fn(function (this: Record<string, unknown>) {
-    this.connect = vi.fn()
-    this.close = vi.fn()
-    this.listTools = vi.fn()
-    this.callTool = vi.fn()
-    this.setRequestHandler = vi.fn()
-    this.setNotificationHandler = vi.fn()
-    this.getServerCapabilities = vi.fn()
-    this.getServerVersion = vi.fn()
-    this.getInstructions = vi.fn()
+    this['connect'] = vi.fn()
+    this['close'] = vi.fn()
+    this['listTools'] = vi.fn()
+    this['callTool'] = vi.fn()
+    this['setRequestHandler'] = vi.fn()
+    this['setNotificationHandler'] = vi.fn()
+    this['getServerCapabilities'] = vi.fn()
+    this['getServerVersion'] = vi.fn()
+    this['getInstructions'] = vi.fn()
   }),
 }))
 

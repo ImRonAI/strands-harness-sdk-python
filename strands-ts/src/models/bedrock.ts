@@ -633,9 +633,9 @@ export class BedrockModel extends Model<BedrockModelConfig> {
     try {
       const request = this._formatRequest(messages, options)
       const converseInput: Record<string, unknown> = {}
-      if (request.messages) converseInput.messages = request.messages
-      if (request.system) converseInput.system = request.system
-      if (request.toolConfig) converseInput.toolConfig = request.toolConfig
+      if (request.messages) converseInput['messages'] = request.messages
+      if (request.system) converseInput['system'] = request.system
+      if (request.toolConfig) converseInput['toolConfig'] = request.toolConfig
 
       const response = await this._client.send(
         new CountTokensCommand({
@@ -2065,7 +2065,7 @@ export class BedrockModel extends Model<BedrockModelConfig> {
       if (Array.isArray(value)) return value.some(visit)
       if (typeof value !== 'object') return false
       const record = value as Record<string, unknown>
-      if (record.action === 'BLOCKED' && record.detected === true) return true
+      if (record['action'] === 'BLOCKED' && record['detected'] === true) return true
       return Object.values(record).some(visit)
     }
     return visit(guardrailData)

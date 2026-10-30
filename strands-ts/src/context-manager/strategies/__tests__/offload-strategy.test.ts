@@ -711,7 +711,7 @@ describe('pinned message protection', () => {
     const merged = messages.find((message) =>
       message.content.some((block) => block instanceof TextBlock && (block as TextBlock).text === 'pinned-a3')
     )
-    expect(merged?.metadata?.custom?.pinned).toBe(true)
+    expect(merged?.metadata?.custom?.['pinned']).toBe(true)
   })
 })
 

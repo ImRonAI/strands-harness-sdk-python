@@ -173,7 +173,7 @@ describe('BedrockModel', () => {
     })
     // Clean up AWS_REGION env var in Node.js only
     if (isNode && process.env) {
-      delete process.env.AWS_REGION
+      delete process.env['AWS_REGION']
     }
   })
 
@@ -680,7 +680,7 @@ describe('BedrockModel', () => {
       collectIterator(provider.stream(messages))
 
       const call = mockConverseStreamCommand.mock.calls[0]![0] as unknown as Record<string, unknown>
-      expect(call.toolConfig).toBeUndefined()
+      expect(call['toolConfig']).toBeUndefined()
     })
 
     it('does not inject noop tool config when toolSpecs are provided', async () => {
@@ -703,7 +703,7 @@ describe('BedrockModel', () => {
       collectIterator(provider.stream(messages, options))
 
       const call = mockConverseStreamCommand.mock.calls[0]![0] as unknown as Record<string, unknown>
-      const toolConfig = call.toolConfig as { tools: Array<{ toolSpec?: { name: string } }> }
+      const toolConfig = call['toolConfig'] as { tools: Array<{ toolSpec?: { name: string } }> }
       expect(toolConfig.tools[0]!.toolSpec!.name).toBe('calc')
       expect(toolConfig.tools.length).toBe(1)
     })

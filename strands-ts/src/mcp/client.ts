@@ -1671,7 +1671,7 @@ function injectTraceContext(args: JSONValue): JSONValue {
     const carrier: ContextCarrier = {}
     propagation.inject(currentContext, carrier)
 
-    const existingMeta = (args as Record<string, unknown>)._meta
+    const existingMeta = (args as Record<string, unknown>)['_meta']
     const mergedMeta =
       existingMeta && typeof existingMeta === 'object' && !Array.isArray(existingMeta)
         ? { ...existingMeta, ...carrier }

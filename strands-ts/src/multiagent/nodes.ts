@@ -205,7 +205,7 @@ export interface AgentNodeOptions {
  * wrapped agent accumulate state across node executions.
  */
 export class AgentNode extends Node {
-  readonly type = 'agentNode' as const
+  override readonly type = 'agentNode' as const
   private readonly _agent: InvokableAgent
   /**
    * Per-node wall-clock ceiling in milliseconds. When set, overrides the orchestrator's
@@ -356,7 +356,7 @@ export interface MultiAgentNodeOptions extends NodeConfig {
  * tagged with this node's identity.
  */
 export class MultiAgentNode extends Node {
-  readonly type = 'multiAgentNode' as const
+  override readonly type = 'multiAgentNode' as const
   private readonly _orchestrator: MultiAgent
 
   constructor(options: MultiAgentNodeOptions) {

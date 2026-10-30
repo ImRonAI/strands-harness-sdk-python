@@ -409,10 +409,10 @@ export class BedrockKnowledgeBaseStore implements MemoryStore {
           }
         }
         if (result.location) {
-          metadata._sourceLocation = result.location as unknown as JSONValue
+          metadata['_sourceLocation'] = result.location as unknown as JSONValue
         }
         if (result.score != null) {
-          metadata._relevanceScore = result.score
+          metadata['_relevanceScore'] = result.score
         }
 
         return {
@@ -536,7 +536,7 @@ export class BedrockKnowledgeBaseStore implements MemoryStore {
 
     // The sidecar must sit beside the source object and be named `<object-key>.metadata.json`.
     const sidecarBody: Record<string, unknown> = { metadataAttributes: attributes }
-    if (sidecarAcl.length > 0) sidecarBody.accessControlList = sidecarAcl
+    if (sidecarAcl.length > 0) sidecarBody['accessControlList'] = sidecarAcl
     const sidecar = JSON.stringify(sidecarBody)
     const sidecarUri = await this._putObject(s3, `${key}.metadata.json`, sidecar, 'application/json')
     return { contentUri, sidecarUri }

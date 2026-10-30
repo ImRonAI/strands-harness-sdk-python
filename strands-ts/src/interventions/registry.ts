@@ -230,7 +230,7 @@ export class InterventionRegistry {
         if (error instanceof InterruptError) {
           throw error
         }
-        action = this._handleError(handler, method, error)
+        action = this._handleError(handler, error)
         if (!action) continue
       }
 
@@ -250,7 +250,7 @@ export class InterventionRegistry {
           if (error instanceof InterruptError) {
             throw error
           }
-          const errorAction = this._handleError(handler, method, error)
+          const errorAction = this._handleError(handler, error)
           if (errorAction) {
             if (apply(errorAction, handler.name)) {
               return
@@ -269,7 +269,7 @@ export class InterventionRegistry {
     }
   }
 
-  private _handleError(handler: InterventionHandler, method: string, error: unknown): InterventionAction | undefined {
+  private _handleError(handler: InterventionHandler, error: unknown): InterventionAction | undefined {
     const errorMsg = error instanceof Error ? error.message : String(error)
 
     if (handler.onError === 'throw') {

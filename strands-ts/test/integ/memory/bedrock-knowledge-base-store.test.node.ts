@@ -194,10 +194,10 @@ describe('BedrockKnowledgeBaseStore Integration Tests', () => {
       const entries = await store.search(marker, { maxSearchResults: 10 })
       const match = entries.find((e: MemoryEntry) => e.content.includes(marker))
       expect(match).toBeDefined()
-      expect(match!.metadata?.priority).toBe('high')
-      expect(match!.metadata?.version).toBe(3)
-      expect(typeof match!.metadata?._relevanceScore).toBe('number')
-      expect(match!.metadata?._sourceLocation).toBeDefined()
+      expect(match!.metadata?.['priority']).toBe('high')
+      expect(match!.metadata?.['version']).toBe(3)
+      expect(typeof match!.metadata?.['_relevanceScore']).toBe('number')
+      expect(match!.metadata?.['_sourceLocation']).toBeDefined()
     }, 60_000)
   })
 
@@ -273,7 +273,7 @@ describe('BedrockKnowledgeBaseStore Integration Tests', () => {
       const entries = await store.search(marker, { maxSearchResults: 10 })
       const match = entries.find((e: MemoryEntry) => e.content.includes(marker))
       expect(match).toBeDefined()
-      expect(match!.metadata?.namespace).toBe(scope)
+      expect(match!.metadata?.['namespace']).toBe(scope)
     }, 60_000)
 
     it('scope isolates S3 documents from other scopes', async () => {
@@ -355,8 +355,8 @@ describe('BedrockKnowledgeBaseStore Integration Tests', () => {
       const entries = await store.search(marker, { maxSearchResults: 10 })
       const match = entries.find((e: MemoryEntry) => e.content.includes(marker))
       expect(match).toBeDefined()
-      expect(match!.metadata?.category).toBe('testing')
-      expect(match!.metadata?.count).toBe(7)
+      expect(match!.metadata?.['category']).toBe('testing')
+      expect(match!.metadata?.['count']).toBe(7)
     }, 60_000)
   })
 

@@ -23,7 +23,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      const result = await agent.tool.calculator!.invoke({ a: 5, b: 3 })
+      const result = await agent.tool['calculator']!.invoke({ a: 5, b: 3 })
 
       expect(result).toStrictEqual(
         new ToolResultBlock({
@@ -47,7 +47,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      const result = await agent.tool.ping!.invoke()
+      const result = await agent.tool['ping']!.invoke()
 
       expect(result).toStrictEqual(
         new ToolResultBlock({
@@ -73,7 +73,7 @@ describe('ToolCaller', () => {
         tools: [tool],
       })
 
-      await agent.tool.probe!.invoke({})
+      await agent.tool['probe']!.invoke({})
 
       expect(receivedSignal).toBe(agent.cancelSignal)
     })
@@ -82,8 +82,8 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [] })
 
-      await expect(agent.tool.nonexistent!.invoke()).rejects.toThrow(ToolNotFoundError)
-      await expect(agent.tool.nonexistent!.invoke()).rejects.toThrow("Tool 'nonexistent' not found")
+      await expect(agent.tool['nonexistent']!.invoke()).rejects.toThrow(ToolNotFoundError)
+      await expect(agent.tool['nonexistent']!.invoke()).rejects.toThrow("Tool 'nonexistent' not found")
     })
   })
 
@@ -101,7 +101,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      const result = await agent.tool.my_tool!.invoke()
+      const result = await agent.tool['my_tool']!.invoke()
 
       expect(result.status).toBe('success')
     })
@@ -119,7 +119,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [exactTool] })
 
-      const result = await agent.tool.my_tool!.invoke()
+      const result = await agent.tool['my_tool']!.invoke()
 
       expect(result).toStrictEqual(
         new ToolResultBlock({
@@ -145,7 +145,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      const result = await agent.tool.mytool!.invoke()
+      const result = await agent.tool['mytool']!.invoke()
 
       expect(result.status).toBe('success')
     })
@@ -172,7 +172,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [exactTool, upperTool] })
 
-      const result = await agent.tool.myTool!.invoke()
+      const result = await agent.tool['myTool']!.invoke()
 
       expect(result.content[0]).toStrictEqual(new TextBlock('exact'))
     })
@@ -192,7 +192,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      await agent.tool.calculator!.invoke({ a: 5, b: 3 })
+      await agent.tool['calculator']!.invoke({ a: 5, b: 3 })
 
       // Per TESTING.md, prefer full-object assertions over per-field checks.
       // toolUseId is non-deterministic (UUID), so use expect.stringMatching.
@@ -240,7 +240,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      await agent.tool.calculator!.invoke({ a: 5, b: 3 }, { recordDirectToolCall: false })
+      await agent.tool['calculator']!.invoke({ a: 5, b: 3 }, { recordDirectToolCall: false })
 
       expect(agent.messages).toHaveLength(0)
     })
@@ -258,7 +258,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      await agent.tool.calculator!.invoke({ a: 5, b: 3 }, { recordDirectToolCall: true })
+      await agent.tool['calculator']!.invoke({ a: 5, b: 3 }, { recordDirectToolCall: true })
 
       expect(agent.messages).toHaveLength(3)
     })
@@ -288,7 +288,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      await agent.tool.my_tool!.invoke({ allowed: 'yes', extra: 'also-recorded' })
+      await agent.tool['my_tool']!.invoke({ allowed: 'yes', extra: 'also-recorded' })
 
       // Input is recorded as-is — no filtering
       const recToolUseBlock = agent.messages[0]!.content[0] as ToolUseBlock
@@ -314,8 +314,8 @@ describe('ToolCaller', () => {
       // Simulate the agent being in the middle of an invocation by mocking isInvoking
       Object.defineProperty(agent, 'isInvoking', { get: () => true })
 
-      await expect(agent.tool.slow_tool!.invoke()).rejects.toThrow(ConcurrentInvocationError)
-      await expect(agent.tool.slow_tool!.invoke()).rejects.toThrow(
+      await expect(agent.tool['slow_tool']!.invoke()).rejects.toThrow(ConcurrentInvocationError)
+      await expect(agent.tool['slow_tool']!.invoke()).rejects.toThrow(
         'Direct tool call cannot be made while the agent is in the middle of an invocation'
       )
     })
@@ -337,7 +337,7 @@ describe('ToolCaller', () => {
       Object.defineProperty(agent, 'isInvoking', { get: () => true })
 
       // Should NOT throw when recording is disabled
-      const result = await agent.tool.quick_tool!.invoke({}, { recordDirectToolCall: false })
+      const result = await agent.tool['quick_tool']!.invoke({}, { recordDirectToolCall: false })
       expect(result.status).toBe('success')
     })
 
@@ -357,7 +357,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [throwingTool] })
 
-      await expect(agent.tool.thrower!.invoke()).rejects.toThrow('Boom!')
+      await expect(agent.tool['thrower']!.invoke()).rejects.toThrow('Boom!')
     })
   })
 
@@ -389,7 +389,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      const handle = agent.tool.calculator!
+      const handle = agent.tool['calculator']!
       expect(typeof handle.invoke).toBe('function')
       expect(typeof handle.stream).toBe('function')
     })
@@ -409,8 +409,8 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      await agent.tool.id_tool!.invoke()
-      await agent.tool.id_tool!.invoke()
+      await agent.tool['id_tool']!.invoke()
+      await agent.tool['id_tool']!.invoke()
 
       // Each call records 3 messages: [0]=assistant(toolUse), [1]=user(toolResult), [2]=assistant(ack)
       // Second call: [3]=assistant(toolUse), [4]=user(toolResult), [5]=assistant(ack)
@@ -459,7 +459,7 @@ describe('ToolCaller', () => {
       const agent = new Agent({ model, tools: [streamingTool] })
 
       const events: ToolStreamEvent[] = []
-      const gen = agent.tool.streamer!.stream()
+      const gen = agent.tool['streamer']!.stream()
       let result = await gen.next()
       while (!result.done) {
         events.push(result.value)
@@ -502,7 +502,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [streamingTool] })
 
-      const result = await agent.tool.streamer!.invoke()
+      const result = await agent.tool['streamer']!.invoke()
 
       expect(result.status).toBe('success')
       expect(result.content[0]).toStrictEqual(new TextBlock('complete'))
@@ -532,7 +532,7 @@ describe('ToolCaller', () => {
       const model = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Hello' })
       const agent = new Agent({ model, tools: [tool] })
 
-      await agent.tool.capture_tool!.invoke({ allowed: 'yes', extra: 'should-pass-through' })
+      await agent.tool['capture_tool']!.invoke({ allowed: 'yes', extra: 'should-pass-through' })
 
       // Tool receives ALL parameters
       expect(receivedInput).toStrictEqual({ allowed: 'yes', extra: 'should-pass-through' })
@@ -556,7 +556,7 @@ describe('ToolCaller', () => {
       )
       agent.toolRegistry.add(laterTool)
 
-      const result = await agent.tool.later_tool!.invoke()
+      const result = await agent.tool['later_tool']!.invoke()
 
       expect(result.status).toBe('success')
       expect(result.content[0]).toStrictEqual(new TextBlock('dynamic'))
@@ -585,7 +585,7 @@ describe('MessageAddedEvent hooks', () => {
       firedEvents.push(event)
     })
 
-    await agent.tool.calculator!.invoke({ a: 5, b: 3 })
+    await agent.tool['calculator']!.invoke({ a: 5, b: 3 })
 
     // Should fire 3 MessageAddedEvents (one per recorded message).
     // Use full-object assertions per TESTING.md.
@@ -645,7 +645,7 @@ describe('MessageAddedEvent hooks', () => {
       firedEvents.push(event)
     })
 
-    await agent.tool.calculator!.invoke({ a: 5, b: 3 }, { recordDirectToolCall: false })
+    await agent.tool['calculator']!.invoke({ a: 5, b: 3 }, { recordDirectToolCall: false })
 
     // No events should fire when recording is disabled
     expect(firedEvents).toHaveLength(0)

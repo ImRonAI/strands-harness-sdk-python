@@ -186,7 +186,7 @@ export class AnthropicModel extends Model<AnthropicModelConfig> {
       this._client = client
     } else {
       const hasEnvKey =
-        typeof process !== 'undefined' && typeof process.env !== 'undefined' && process.env.ANTHROPIC_API_KEY
+        typeof process !== 'undefined' && typeof process.env !== 'undefined' && process.env['ANTHROPIC_API_KEY']
 
       if (!apiKey && !hasEnvKey) {
         throw new Error(
@@ -397,13 +397,14 @@ export class AnthropicModel extends Model<AnthropicModelConfig> {
 
         // A stream that ends without message_stop is incomplete; emit no stop event so the caller can tell.
         if (!messageStopped) return
-        usage.inputTokens += responseUsage.input_tokens ?? 0
-        usage.outputTokens += responseUsage.output_tokens ?? 0
-        if (responseUsage.cache_creation_input_tokens !== undefined) {
-          usage.cacheWriteInputTokens = (usage.cacheWriteInputTokens ?? 0) + responseUsage.cache_creation_input_tokens
+        usage.inputTokens += responseUsage['input_tokens'] ?? 0
+        usage.outputTokens += responseUsage['output_tokens'] ?? 0
+        if (responseUsage['cache_creation_input_tokens'] !== undefined) {
+          usage.cacheWriteInputTokens =
+            (usage.cacheWriteInputTokens ?? 0) + responseUsage['cache_creation_input_tokens']
         }
-        if (responseUsage.cache_read_input_tokens !== undefined) {
-          usage.cacheReadInputTokens = (usage.cacheReadInputTokens ?? 0) + responseUsage.cache_read_input_tokens
+        if (responseUsage['cache_read_input_tokens'] !== undefined) {
+          usage.cacheReadInputTokens = (usage.cacheReadInputTokens ?? 0) + responseUsage['cache_read_input_tokens']
         }
 
         if (stopReason === 'pauseTurn') {
@@ -614,7 +615,7 @@ export class AnthropicModel extends Model<AnthropicModelConfig> {
     }))
     const serverTools = [
       ...(this._config.anthropicTools ?? []),
-      ...((this._config.params?.tools as Anthropic.ToolUnion[] | undefined) ?? []),
+      ...((this._config.params?.['tools'] as Anthropic.ToolUnion[] | undefined) ?? []),
     ]
     // Forcing a tool means this turn must call a function tool, so server tools are left out.
     if (!options?.toolChoice || 'auto' in options.toolChoice) {

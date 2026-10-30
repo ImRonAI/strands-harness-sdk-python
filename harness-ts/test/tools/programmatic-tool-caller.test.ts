@@ -322,7 +322,8 @@ describe('programmatic_tool_caller', () => {
       description: 'Writes to the invocation state the inner call ran with.',
       inputSchema: z.object({}),
       callback: (_input, toolContext) => {
-        toolContext.invocationState.writtenByInnerCall = true
+        if (!toolContext) throw new Error('Tool context is required for whoami.')
+        toolContext.invocationState['writtenByInnerCall'] = true
         return 'ok'
       },
     })

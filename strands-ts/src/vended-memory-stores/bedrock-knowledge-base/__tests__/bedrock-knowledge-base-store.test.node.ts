@@ -472,7 +472,7 @@ describe('BedrockKnowledgeBaseStore', () => {
       })
 
       const [entry] = await store.search('q')
-      expect(entry?.metadata?.version).toBe(3)
+      expect(entry?.metadata?.['version']).toBe(3)
     })
 
     it('keeps results at or below maxScore', async () => {

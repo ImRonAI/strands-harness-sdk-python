@@ -253,7 +253,7 @@ describe('BackgroundTasks', () => {
         },
       ])
     const taskId = persistedTasks(agent)![0]!.taskId
-    const inspected = await agent.tool.strands_manage_background_task!.invoke(
+    const inspected = await agent.tool['strands_manage_background_task']!.invoke(
       { mode: 'get', taskId },
       { recordDirectToolCall: false }
     )
@@ -321,7 +321,7 @@ describe('BackgroundTasks', () => {
       error: { type: 'executionError', message: expect.any(String) },
     })
     await expect(
-      agent.tool.strands_manage_background_task!.invoke(
+      agent.tool['strands_manage_background_task']!.invoke(
         { mode: 'cancel', taskId: 'working' },
         { recordDirectToolCall: false }
       )
@@ -417,7 +417,7 @@ describe('BackgroundTasks', () => {
     const blockedTask = persistedTasks(agent)?.find((task) => task.toolName === 'blocked')
     expect(blockedTask).toBeDefined()
     await expect(
-      agent.tool.strands_manage_background_task!.invoke(
+      agent.tool['strands_manage_background_task']!.invoke(
         { mode: 'get', taskId: blockedTask!.taskId },
         { recordDirectToolCall: false }
       )
@@ -440,7 +440,7 @@ describe('BackgroundTasks', () => {
       ],
     })
     await expect(
-      agent.tool.strands_manage_background_task!.invoke(
+      agent.tool['strands_manage_background_task']!.invoke(
         { mode: 'cancel', taskId: blockedTask!.taskId },
         { recordDirectToolCall: false }
       )

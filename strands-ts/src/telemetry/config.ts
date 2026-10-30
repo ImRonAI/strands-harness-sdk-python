@@ -309,8 +309,9 @@ export function setupMeter(config: MeterConfig = {}): MeterProvider {
 
 function getOtelResource(): Resource {
   const serviceName = getServiceName()
-  const serviceNamespace = globalThis.process?.env?.OTEL_SERVICE_NAMESPACE || DEFAULT_SERVICE_NAMESPACE
-  const deploymentEnvironment = globalThis.process?.env?.OTEL_DEPLOYMENT_ENVIRONMENT || DEFAULT_DEPLOYMENT_ENVIRONMENT
+  const serviceNamespace = globalThis.process?.env?.['OTEL_SERVICE_NAMESPACE'] || DEFAULT_SERVICE_NAMESPACE
+  const deploymentEnvironment =
+    globalThis.process?.env?.['OTEL_DEPLOYMENT_ENVIRONMENT'] || DEFAULT_DEPLOYMENT_ENVIRONMENT
 
   const envAttributes = envDetector.detect().attributes ?? {}
   return resourceFromAttributes({

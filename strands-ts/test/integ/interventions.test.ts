@@ -434,7 +434,7 @@ describe.each(allProviders)('Interventions with $name', ({ name, skip, createMod
           interventions: [
             new TransformToolInputHandler((input) => ({
               ...input,
-              message: `[TRANSFORMED] ${input.message ?? 'hello'}`,
+              message: `[TRANSFORMED] ${input['message'] ?? 'hello'}`,
             })),
           ],
         })
@@ -798,7 +798,7 @@ describe.each(allProviders)('Interventions with $name', ({ name, skip, createMod
             return InterventionActions.transform((e) => {
               ;(e as BeforeToolCallEvent).toolUse.input = {
                 ...input,
-                message: `[PREFIX] ${input.message ?? ''}`,
+                message: `[PREFIX] ${input['message'] ?? ''}`,
               } as JSONValue
             })
           }
@@ -811,7 +811,7 @@ describe.each(allProviders)('Interventions with $name', ({ name, skip, createMod
               const current = (e as BeforeToolCallEvent).toolUse.input as Record<string, unknown>
               ;(e as BeforeToolCallEvent).toolUse.input = {
                 ...current,
-                message: `${current.message || ''} [SUFFIX]`,
+                message: `${current['message'] || ''} [SUFFIX]`,
               } as JSONValue
             })
           }
@@ -877,7 +877,7 @@ describe.each(allProviders)('Interventions with $name', ({ name, skip, createMod
         readonly name = 'input-validation'
         override beforeToolCall(event: BeforeToolCallEvent) {
           const input = event.toolUse.input as Record<string, unknown>
-          if (typeof input.message === 'string' && input.message.includes('DROP TABLE')) {
+          if (typeof input['message'] === 'string' && input['message'].includes('DROP TABLE')) {
             return InterventionActions.deny('SQL injection detected in tool input')
           }
           return InterventionActions.proceed()
@@ -1210,7 +1210,7 @@ describe.each(allProviders)('Interventions with $name', ({ name, skip, createMod
             return InterventionActions.transform((e) => {
               ;(e as BeforeToolCallEvent).toolUse.input = {
                 ...input,
-                message: `[AUDITED] ${input.message ?? 'data'}`,
+                message: `[AUDITED] ${input['message'] ?? 'data'}`,
               } as JSONValue
             })
           }

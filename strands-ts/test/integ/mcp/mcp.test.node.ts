@@ -79,7 +79,7 @@ describe('MCP Integration Tests', () => {
       const agent = new Agent({ tools: [client] })
 
       await agent.initialize()
-      const result = await agent.tool.filtered_echo!.invoke({ message: 'direct integration' })
+      const result = await agent.tool['filtered_echo']!.invoke({ message: 'direct integration' })
 
       expect(agent.toolRegistry.list().map((tool) => tool.name)).toEqual(['filtered_echo'])
       expect(result).toMatchObject({
@@ -96,8 +96,8 @@ describe('MCP Integration Tests', () => {
 
       await agent1.initialize()
       await agent2.initialize()
-      const result1 = await agent1.tool.shared_echo!.invoke({ message: 'Agent 1' })
-      const result2 = await agent2.tool.shared_echo!.invoke({ message: 'Agent 2' })
+      const result1 = await agent1.tool['shared_echo']!.invoke({ message: 'Agent 1' })
+      const result2 = await agent2.tool['shared_echo']!.invoke({ message: 'Agent 2' })
 
       expect(agent1.toolRegistry.list().map((tool) => tool.name)).toEqual(['shared_echo'])
       expect(agent2.toolRegistry.list().map((tool) => tool.name)).toEqual(['shared_echo'])
@@ -112,8 +112,8 @@ describe('MCP Integration Tests', () => {
       const agent = new Agent({ tools: [echoClient, calculatorClient] })
 
       await agent.initialize()
-      const echoResult = await agent.tool.server1_echo!.invoke({ message: 'From Server 1' })
-      const calculatorResult = await agent.tool.server2_calculator!.invoke({ operation: 'add', a: 2, b: 3 })
+      const echoResult = await agent.tool['server1_echo']!.invoke({ message: 'From Server 1' })
+      const calculatorResult = await agent.tool['server2_calculator']!.invoke({ operation: 'add', a: 2, b: 3 })
 
       expect(
         agent.toolRegistry

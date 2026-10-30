@@ -88,24 +88,25 @@ export function takeSnapshot(agent: LocalAgent, options: TakeSnapshotOptions): S
   const data: Record<string, JSONValue> = {}
 
   if (fields.has('messages')) {
-    data.messages = agent.messages.map((msg) => msg.toJSON()) as unknown as JSONValue
+    data['messages'] = agent.messages.map((msg) => msg.toJSON()) as unknown as JSONValue
   }
 
   if (fields.has('state')) {
-    data.state = serializeStateSerializable(agent.appState)
+    data['state'] = serializeStateSerializable(agent.appState)
   }
 
   if (fields.has('systemPrompt')) {
-    data.systemPrompt = agent.systemPrompt !== undefined ? (systemPromptToData(agent.systemPrompt) as JSONValue) : null
+    data['systemPrompt'] =
+      agent.systemPrompt !== undefined ? (systemPromptToData(agent.systemPrompt) as JSONValue) : null
   }
 
   if (fields.has('modelState')) {
-    data.modelState = serializeStateSerializable(agent.modelState)
+    data['modelState'] = serializeStateSerializable(agent.modelState)
   }
 
   if (fields.has('interrupts')) {
     const interruptState = (agent as unknown as { _interruptState?: InterruptState })._interruptState
-    data.interrupts = interruptState ? (interruptState.toJSON() as unknown as JSONValue) : null
+    data['interrupts'] = interruptState ? (interruptState.toJSON() as unknown as JSONValue) : null
   }
 
   return {
@@ -135,7 +136,7 @@ export function loadSnapshot(agent: LocalAgent, snapshot: Snapshot): void {
   }
 
   if ('messages' in snapshot.data) {
-    const messages = snapshot.data.messages
+    const messages = snapshot.data['messages']
     agent.messages.length = 0
     for (const msgData of messages as unknown as MessageData[]) {
       agent.messages.push(Message.fromJSON(msgData))
@@ -143,13 +144,13 @@ export function loadSnapshot(agent: LocalAgent, snapshot: Snapshot): void {
   }
 
   if ('state' in snapshot.data) {
-    loadStateSerializable(agent.appState, snapshot.data.state)
+    loadStateSerializable(agent.appState, snapshot.data['state'])
   }
 
   // Use key-presence check to distinguish "field absent" (leave unchanged) from
   // "field present as null" (agent had no system prompt — clear it).
   if ('systemPrompt' in snapshot.data) {
-    const systemPrompt = snapshot.data.systemPrompt
+    const systemPrompt = snapshot.data['systemPrompt']
     if (systemPrompt !== null) {
       agent.systemPrompt = systemPromptFromData(systemPrompt as SystemPromptData)
     } else {
@@ -158,11 +159,11 @@ export function loadSnapshot(agent: LocalAgent, snapshot: Snapshot): void {
   }
 
   if ('modelState' in snapshot.data) {
-    loadStateSerializable(agent.modelState, snapshot.data.modelState)
+    loadStateSerializable(agent.modelState, snapshot.data['modelState'])
   }
 
   if ('interrupts' in snapshot.data) {
-    const interruptStateData = snapshot.data.interrupts
+    const interruptStateData = snapshot.data['interrupts']
     if (interruptStateData !== null) {
       const agentRecord = agent as unknown as { _interruptState: InterruptState }
       agentRecord._interruptState = InterruptState.fromJSON(interruptStateData as unknown as InterruptStateData)

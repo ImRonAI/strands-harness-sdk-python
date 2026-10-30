@@ -128,7 +128,7 @@ export function makeNotebook({
 
       // Ensure default notebook exists
       if (Object.keys(notebooks).length === 0) {
-        notebooks.default = ''
+        notebooks['default'] = ''
       }
 
       let result: string

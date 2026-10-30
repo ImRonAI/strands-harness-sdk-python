@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { assert, describe, expect, it } from 'vitest'
+import { ZodTool } from '@strands-agents/sdk'
 import type { Agent, Plugin, ToolContext } from '@strands-agents/sdk'
 import type { InjectionContext } from '@strands-agents/sdk/vended-plugins/context-injector'
 
@@ -29,7 +30,8 @@ describe('Todos', () => {
   it('persists the list to app state and reports remaining count', async () => {
     const agent = await createHarness()
     const [todoWrite] = new Todos().getTools()
-    const result = (await todoWrite.invoke({ todos: sampleTodos() }, { agent } as unknown as ToolContext)) as string
+    assert.instanceOf(todoWrite, ZodTool)
+    const result = await todoWrite.invoke({ todos: sampleTodos() }, { agent } as unknown as ToolContext)
     expect(agent.appState.get('todos')).toEqual(sampleTodos())
     expect(result).toContain('2 todos remaining')
     expect(result).toContain('[in_progress] Writing tests')
@@ -38,8 +40,9 @@ describe('Todos', () => {
   it('clears app state when given an empty list', async () => {
     const agent = await createHarness()
     const [todoWrite] = new Todos().getTools()
+    assert.instanceOf(todoWrite, ZodTool)
     await todoWrite.invoke({ todos: sampleTodos() }, { agent } as unknown as ToolContext)
-    const result = (await todoWrite.invoke({ todos: [] }, { agent } as unknown as ToolContext)) as string
+    const result = await todoWrite.invoke({ todos: [] }, { agent } as unknown as ToolContext)
     expect(result).toBe('Todo list cleared')
     expect(agent.appState.get('todos')).toBeUndefined()
   })
@@ -47,7 +50,8 @@ describe('Todos', () => {
   it('clears safely when no list was ever set', async () => {
     const agent = await createHarness()
     const [todoWrite] = new Todos().getTools()
-    const result = (await todoWrite.invoke({ todos: [] }, { agent } as unknown as ToolContext)) as string
+    assert.instanceOf(todoWrite, ZodTool)
+    const result = await todoWrite.invoke({ todos: [] }, { agent } as unknown as ToolContext)
     expect(result).toBe('Todo list cleared')
     expect(agent.appState.get('todos')).toBeUndefined()
   })

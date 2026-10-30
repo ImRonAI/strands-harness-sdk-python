@@ -46,7 +46,7 @@ export function takeSnapshot(
   }
 
   if (state) {
-    data.state = serializeStateSerializable(state)
+    data['state'] = serializeStateSerializable(state)
   }
 
   return {
@@ -84,13 +84,13 @@ export function loadSnapshot(orchestrator: Graph | Swarm, snapshot: Snapshot, st
     )
   }
 
-  if (snapshot.data.orchestratorId !== orchestrator.id) {
+  if (snapshot.data['orchestratorId'] !== orchestrator.id) {
     throw new Error(
-      `Snapshot orchestrator ID mismatch: expected '${orchestrator.id}', got '${snapshot.data.orchestratorId}'`
+      `Snapshot orchestrator ID mismatch: expected '${orchestrator.id}', got '${snapshot.data['orchestratorId']}'`
     )
   }
 
   if (state && 'state' in snapshot.data) {
-    loadStateSerializable(state, snapshot.data.state)
+    loadStateSerializable(state, snapshot.data['state'])
   }
 }

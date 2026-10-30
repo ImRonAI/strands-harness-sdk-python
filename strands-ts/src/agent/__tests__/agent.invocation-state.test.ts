@@ -51,8 +51,8 @@ describe('invocationState', () => {
 
       let seenInAfter: InvocationState | undefined
       agent.addHook(BeforeModelCallEvent, (event) => {
-        event.invocationState.counter = (event.invocationState.counter as number | undefined) ?? 0
-        event.invocationState.counter = (event.invocationState.counter as number) + 1
+        event.invocationState['counter'] = (event.invocationState['counter'] as number | undefined) ?? 0
+        event.invocationState['counter'] = (event.invocationState['counter'] as number) + 1
       })
       agent.addHook(AfterModelCallEvent, (event) => {
         seenInAfter = event.invocationState
@@ -110,7 +110,7 @@ describe('invocationState', () => {
       let cycle2State: InvocationState | undefined
       let modelCalls = 0
       agent.addHook(AfterToolCallEvent, (event) => {
-        event.invocationState.toolCompleted = true
+        event.invocationState['toolCompleted'] = true
       })
       agent.addHook(BeforeModelCallEvent, (event) => {
         modelCalls++
@@ -135,9 +135,9 @@ describe('invocationState', () => {
       // Override stream to read/write invocationState.
       // eslint-disable-next-line require-yield
       tool.stream = async function* (context) {
-        const prev = (context.invocationState.callCount as number | undefined) ?? 0
-        context.invocationState.callCount = prev + 1
-        context.invocationState.lastToolSeenUserId = context.invocationState.userId
+        const prev = (context.invocationState['callCount'] as number | undefined) ?? 0
+        context.invocationState['callCount'] = prev + 1
+        context.invocationState['lastToolSeenUserId'] = context.invocationState['userId']
         return new ToolResultBlock({
           toolUseId: context.toolUse.toolUseId,
           status: 'success',
@@ -166,7 +166,7 @@ describe('invocationState', () => {
       const agent = new Agent({ model, appState: { persistent: 'yes' } })
 
       agent.addHook(BeforeModelCallEvent, (event) => {
-        event.invocationState.ephemeral = 'only-this-run'
+        event.invocationState['ephemeral'] = 'only-this-run'
       })
 
       const result = await agent.invoke('Hi', { invocationState: { requestId: 'r-1' } })
@@ -186,7 +186,7 @@ describe('invocationState', () => {
       const agent = new Agent({ model })
 
       agent.addHook(BeforeModelCallEvent, (event) => {
-        event.invocationState.seen = true
+        event.invocationState['seen'] = true
       })
 
       const first = await agent.invoke('1')
@@ -210,8 +210,8 @@ describe('invocationState', () => {
 
       agent.addHook(BeforeModelCallEvent, (event) => {
         seen.push(event.invocationState)
-        event.invocationState.modelCalls = (event.invocationState.modelCalls as number | undefined) ?? 0
-        event.invocationState.modelCalls = (event.invocationState.modelCalls as number) + 1
+        event.invocationState['modelCalls'] = (event.invocationState['modelCalls'] as number | undefined) ?? 0
+        event.invocationState['modelCalls'] = (event.invocationState['modelCalls'] as number) + 1
       })
       agent.addHook(AfterModelCallEvent, (event) => {
         seen.push(event.invocationState)
@@ -254,8 +254,8 @@ describe('invocationState', () => {
 
       agent.addHook(AfterToolCallEvent, (event) => {
         seen.push(event.invocationState)
-        event.invocationState.toolAttempts = (event.invocationState.toolAttempts as number | undefined) ?? 0
-        event.invocationState.toolAttempts = (event.invocationState.toolAttempts as number) + 1
+        event.invocationState['toolAttempts'] = (event.invocationState['toolAttempts'] as number | undefined) ?? 0
+        event.invocationState['toolAttempts'] = (event.invocationState['toolAttempts'] as number) + 1
         if (!retried && event.result.status === 'error') {
           retried = true
           event.retry = true

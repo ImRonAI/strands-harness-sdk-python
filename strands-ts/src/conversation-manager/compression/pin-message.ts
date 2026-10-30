@@ -13,13 +13,13 @@ import { Message, type ToolUseBlock, type ToolResultBlock } from '../../types/me
 export function isPinned(messages: Message[], index: number): boolean {
   const msg = messages[index]!
 
-  if (msg.metadata?.custom?.pinned === true) return true
+  if (msg.metadata?.custom?.['pinned'] === true) return true
 
   // Tool-pair partner protection: if this is a toolResult, check if prev toolUse is pinned
   const toolResultBlocks = msg.content.filter((b): b is ToolResultBlock => b.type === 'toolResultBlock')
   if (toolResultBlocks.length > 0 && index > 0) {
     const prev = messages[index - 1]!
-    if (prev.metadata?.custom?.pinned === true) {
+    if (prev.metadata?.custom?.['pinned'] === true) {
       const resultIds = new Set(toolResultBlocks.map((b) => b.toolUseId))
       if (prev.content.some((b) => b.type === 'toolUseBlock' && resultIds.has((b as ToolUseBlock).toolUseId))) {
         return true
@@ -31,7 +31,7 @@ export function isPinned(messages: Message[], index: number): boolean {
   const toolUseBlocks = msg.content.filter((b): b is ToolUseBlock => b.type === 'toolUseBlock')
   if (toolUseBlocks.length > 0 && index + 1 < messages.length) {
     const next = messages[index + 1]!
-    if (next.metadata?.custom?.pinned === true) {
+    if (next.metadata?.custom?.['pinned'] === true) {
       const useIds = new Set(toolUseBlocks.map((b) => b.toolUseId))
       if (next.content.some((b) => b.type === 'toolResultBlock' && useIds.has((b as ToolResultBlock).toolUseId))) {
         return true

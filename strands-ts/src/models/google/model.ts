@@ -276,7 +276,7 @@ export class GoogleModel extends Model<GoogleModelConfig> {
    * Gets API key from environment variables.
    */
   private static _getEnvApiKey(): string | undefined {
-    return globalThis?.process?.env?.GEMINI_API_KEY
+    return globalThis?.process?.env?.['GEMINI_API_KEY']
   }
 
   /**

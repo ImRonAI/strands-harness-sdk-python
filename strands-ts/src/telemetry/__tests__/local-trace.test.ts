@@ -108,7 +108,7 @@ describe('LocalTrace', () => {
     it('stores cycle metadata', () => {
       const trace = new AgentTrace('Cycle 1')
 
-      trace.metadata.cycleId = 'cycle-1'
+      trace.metadata['cycleId'] = 'cycle-1'
 
       expect(trace.metadata).toStrictEqual({ cycleId: 'cycle-1' })
     })
@@ -116,8 +116,8 @@ describe('LocalTrace', () => {
     it('stores tool metadata', () => {
       const trace = new AgentTrace('Tool: calc')
 
-      trace.metadata.toolUseId = 'tool-1'
-      trace.metadata.toolName = 'calc'
+      trace.metadata['toolUseId'] = 'tool-1'
+      trace.metadata['toolName'] = 'calc'
 
       expect(trace.metadata).toStrictEqual({ toolUseId: 'tool-1', toolName: 'calc' })
     })
@@ -154,7 +154,7 @@ describe('LocalTrace', () => {
 
     it('serializes a hierarchy with children and metadata', () => {
       const root = new AgentTrace('Cycle 1', { startTime: 1000 })
-      root.metadata.cycleId = 'cycle-1'
+      root.metadata['cycleId'] = 'cycle-1'
       const child = new AgentTrace('stream_messages', { parent: root, startTime: 1001 })
       child.end(1100)
       root.end(1200)
@@ -162,7 +162,7 @@ describe('LocalTrace', () => {
       const json = root.toJSON()
 
       expect(json.name).toBe('Cycle 1')
-      expect(json.metadata.cycleId).toBe('cycle-1')
+      expect(json.metadata['cycleId']).toBe('cycle-1')
       expect(json.duration).toBe(200)
       expect(json.children).toHaveLength(1)
       expect(json.children[0]).toStrictEqual({
@@ -180,8 +180,8 @@ describe('LocalTrace', () => {
 
     it('serializes tool metadata correctly', () => {
       const toolTrace = new AgentTrace('Tool: calc', { startTime: 1000 })
-      toolTrace.metadata.toolUseId = 'tool-123'
-      toolTrace.metadata.toolName = 'calc'
+      toolTrace.metadata['toolUseId'] = 'tool-123'
+      toolTrace.metadata['toolName'] = 'calc'
       toolTrace.end(1500)
 
       const json = toolTrace.toJSON()

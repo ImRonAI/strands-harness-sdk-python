@@ -536,12 +536,12 @@ function mcpServerOptions(
       server &&
       typeof server === 'object' &&
       !Array.isArray(server) &&
-      typeof (server as Record<string, unknown>).command === 'string'
+      typeof (server as Record<string, unknown>)['command'] === 'string'
         ? {
             ...server,
             cwd:
-              typeof (server as Record<string, unknown>).cwd === 'string'
-                ? resolvePath((server as Record<string, string>).cwd!, baseDir)
+              typeof (server as Record<string, unknown>)['cwd'] === 'string'
+                ? resolvePath((server as Record<string, string>)['cwd']!, baseDir)
                 : baseDir,
           }
         : server,
@@ -567,7 +567,7 @@ function mcpServerMap(value: Record<string, unknown> | string, baseDir: string):
     }
     servers = loaded as Record<string, unknown>
   }
-  const nested = servers.mcpServers
+  const nested = servers['mcpServers']
   if (nested === undefined) {
     return servers
   }

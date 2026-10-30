@@ -268,7 +268,7 @@ describe('SessionManager', () => {
 
       await initPluginAndInvokeHook(sessionManager, new InitializedEvent(createMockEvent(mockAgent)))
 
-      expect(mockAgent.messages).toEqual(snapshot.data.messages)
+      expect(mockAgent.messages).toEqual(snapshot.data['messages'])
     })
 
     it('handles missing snapshot gracefully', async () => {
@@ -786,8 +786,8 @@ describe('SessionManager — stash integration', () => {
         location: { sessionId: 'test-session', scope: 'agent', scopeId: 'agent' },
       })
       expect(snapshot).not.toBeNull()
-      expect(snapshot!.data.stash).toBeDefined()
-      const stashData = snapshot!.data.stash as Record<string, unknown>
+      expect(snapshot!.data['stash']).toBeDefined()
+      const stashData = snapshot!.data['stash'] as Record<string, unknown>
       expect(stashData).toEqual({
         location: 'inline',
         entries: { 'tool-1_0': { text: 'hello' } },
@@ -846,7 +846,7 @@ describe('SessionManager — stash integration', () => {
         location: { sessionId: 'test-session', scope: 'agent', scopeId: 'agent' },
       })
       expect(snapshot).not.toBeNull()
-      expect(snapshot!.data.stash).toEqual({ location: 'external', storageType: 'InMemoryStorage' })
+      expect(snapshot!.data['stash']).toEqual({ location: 'external', storageType: 'InMemoryStorage' })
     })
   })
 
@@ -877,7 +877,7 @@ describe('SessionManager — stash integration', () => {
 
     it('skips stash restore when location is external', async () => {
       const snapshot = createTestSnapshot()
-      snapshot.data.stash = { location: 'external' } as JSONValue
+      snapshot.data['stash'] = { location: 'external' } as JSONValue
       await snapshotStorage.saveSnapshot({
         location: { sessionId: 'test-session', scope: 'agent', scopeId: 'agent' },
         snapshotId: 'latest',
@@ -901,7 +901,7 @@ describe('SessionManager — stash integration', () => {
 
     it('warns when stash storage type changed since snapshot', async () => {
       const snapshot = createTestSnapshot()
-      snapshot.data.stash = { location: 'external', storageType: 'S3Storage' } as JSONValue
+      snapshot.data['stash'] = { location: 'external', storageType: 'S3Storage' } as JSONValue
       await snapshotStorage.saveSnapshot({
         location: { sessionId: 'test-session', scope: 'agent', scopeId: 'agent' },
         snapshotId: 'latest',
@@ -1325,7 +1325,7 @@ describe('SessionManager — multi-agent', () => {
         location: { sessionId: 'test-session', scope: 'multiAgent', scopeId: 'test-graph' },
       })
       expect(snapshot).not.toBeNull()
-      expect(snapshot?.data.state).toBeDefined()
+      expect(snapshot?.data['state']).toBeDefined()
     })
 
     it('saves immutable orchestrator snapshot', async () => {
@@ -1463,7 +1463,7 @@ describe('SessionManager — multi-agent', () => {
         new NodeResult({ nodeId: 'a', status: Status.COMPLETED, duration: 100, content: [new TextBlock('done')] })
       )
       const { serializeStateSerializable } = await import('../../types/serializable.js')
-      snapshot.data.state = serializeStateSerializable(state)
+      snapshot.data['state'] = serializeStateSerializable(state)
 
       await storage.saveSnapshot({
         location: { sessionId: 'test-session', scope: 'multiAgent', scopeId: 'test-graph' },
@@ -1523,7 +1523,7 @@ describe('SessionManager — multi-agent', () => {
       restoredNodeState.results.push(
         new NodeResult({ nodeId: 'a', status: Status.COMPLETED, duration: 100, content: [new TextBlock('done')] })
       )
-      snapshot.data.state = serializeStateSerializable(restoredState)
+      snapshot.data['state'] = serializeStateSerializable(restoredState)
       await storage.saveSnapshot({
         location: { sessionId: 'test-session', scope: 'multiAgent', scopeId: 'test-graph' },
         snapshotId: 'latest',
@@ -1569,9 +1569,9 @@ describe('SessionManager — multi-agent', () => {
 
       const persistedSnapshot = saveSnapshotSpy.mock.calls.at(-1)?.[0].snapshot
       expect(persistedSnapshot).toBeDefined()
-      if (persistedSnapshot?.data.state === undefined) throw new Error('saved snapshot has no state')
+      if (persistedSnapshot?.data['state'] === undefined) throw new Error('saved snapshot has no state')
       const persistedState = new MultiAgentState({ nodeIds: ['a', 'b'] })
-      loadStateSerializable(persistedState, persistedSnapshot.data.state)
+      loadStateSerializable(persistedState, persistedSnapshot.data['state'])
       expect(persistedState.node('a')?.status).toBe(Status.COMPLETED)
       expect(persistedState.node('b')?.status).toBe(Status.COMPLETED)
 
@@ -1608,7 +1608,7 @@ describe('SessionManager — multi-agent', () => {
         const snap = createMultiAgentTestSnapshot(orch.id)
         const st = new MultiAgentState({ nodeIds: ['x'] })
         st.steps = steps
-        snap.data.state = serializeStateSerializable(st)
+        snap.data['state'] = serializeStateSerializable(st)
         await storage.saveSnapshot({
           location: { sessionId: 'test-session', scope: 'multiAgent', scopeId: orch.id },
           snapshotId: 'latest',
@@ -1643,7 +1643,7 @@ describe('SessionManager — multi-agent', () => {
       const state = new MultiAgentState({ nodeIds: ['a'] })
       state.steps = 7
       const { serializeStateSerializable } = await import('../../types/serializable.js')
-      snapshot.data.state = serializeStateSerializable(state)
+      snapshot.data['state'] = serializeStateSerializable(state)
 
       await storage.saveSnapshot({
         location: { sessionId: 'test-session', scope: 'multiAgent', scopeId: 'test-graph' },

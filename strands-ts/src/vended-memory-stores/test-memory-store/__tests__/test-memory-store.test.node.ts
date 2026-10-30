@@ -126,8 +126,8 @@ describe('TestMemoryStore', () => {
       const results = await store.search('cat dog park')
       expect(results).toHaveLength(2)
       expect(results[0]?.content).toBe('the cat chased the dog in the park')
-      expect(results[0]?.metadata?._relevanceScore).toBe(3)
-      expect(results[1]?.metadata?._relevanceScore).toBe(1)
+      expect(results[0]?.metadata?.['_relevanceScore']).toBe(3)
+      expect(results[1]?.metadata?.['_relevanceScore']).toBe(1)
     })
 
     it('excludes records with no token overlap', async () => {
@@ -201,18 +201,18 @@ describe('TestMemoryStore', () => {
     it('defaults to a sanitized path under <home>/.strands/memory when no path is given', async () => {
       // Redirect the home dir into the temp dir (HOME/USERPROFILE, which os.homedir reads) so the
       // test never touches the real home dir; the unsafe name exercises sanitization.
-      const savedHome = process.env.HOME
-      const savedUserProfile = process.env.USERPROFILE
-      process.env.HOME = dir
-      process.env.USERPROFILE = dir
+      const savedHome = process.env['HOME']
+      const savedUserProfile = process.env['USERPROFILE']
+      process.env['HOME'] = dir
+      process.env['USERPROFILE'] = dir
       try {
         const store = new TestMemoryStore({ name: '../weird/name' })
         await store.add('a fact worth keeping')
         const expected = join(os.homedir(), '.strands', 'memory', '__weird_name.json')
         await expect(fs.access(expected)).resolves.toBeUndefined()
       } finally {
-        process.env.HOME = savedHome
-        process.env.USERPROFILE = savedUserProfile
+        process.env['HOME'] = savedHome
+        process.env['USERPROFILE'] = savedUserProfile
       }
     })
 
@@ -297,8 +297,8 @@ describe('TestMemoryStore', () => {
       const results = await store.search('dark mode preference')
       expect(results).toHaveLength(1)
       expect(results[0]?.content).toBe('the user prefers dark mode')
-      expect(results[0]?.metadata?.source).toBe('py')
-      expect(results[0]?.metadata?._relevanceScore).toBe(2)
+      expect(results[0]?.metadata?.['source']).toBe('py')
+      expect(results[0]?.metadata?.['_relevanceScore']).toBe(2)
     })
 
     it('writes the shared camelCase format with a Z-suffixed millisecond timestamp', async () => {
