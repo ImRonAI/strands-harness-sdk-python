@@ -15,7 +15,7 @@ import { configureLogging, resetWarnOnce } from '../src/logging.js'
 
 afterEach(() => {
   resetWarnOnce()
-  delete process.env.STRANDS_TEST_MCP_TOKEN
+  delete process.env['STRANDS_TEST_MCP_TOKEN']
 })
 
 describe('HarnessAgentConfig', () => {
@@ -69,7 +69,7 @@ describe('HarnessAgentConfig', () => {
   })
 
   it('folds contextManager "off" to false, matching Python', () => {
-    expect(defineHarnessAgentConfig({ contextManager: 'off' }).contextManager).toBe(false)
+    expect(normalizeHarnessAgentConfig({ contextManager: 'off' }).contextManager).toBe(false)
     expect(defineHarnessAgentConfig({ contextManager: false }).contextManager).toBe(false)
   })
 
@@ -239,7 +239,7 @@ describe('HarnessAgentConfig', () => {
   })
 
   it('expands MCP environment placeholders and unwraps the server map', async () => {
-    process.env.STRANDS_TEST_MCP_TOKEN = 'secret'
+    process.env['STRANDS_TEST_MCP_TOKEN'] = 'secret'
     const config = defineHarnessAgentConfig({
       mcpServers: {
         mcpServers: {
@@ -269,7 +269,7 @@ describe('HarnessAgentConfig', () => {
   })
 
   it('loads and expands file-backed MCP config', async () => {
-    process.env.STRANDS_TEST_MCP_TOKEN = 'secret'
+    process.env['STRANDS_TEST_MCP_TOKEN'] = 'secret'
     const root = await mkdtemp(join(tmpdir(), 'strands-config-'))
     try {
       await writeFile(

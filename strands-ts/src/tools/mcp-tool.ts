@@ -81,7 +81,7 @@ export class McpTool extends Tool {
         const elicitations =
           error instanceof UrlElicitationRequiredError
             ? error.elicitations
-            : (error.data as Record<string, unknown> | undefined)?.elicitations
+            : (error.data as Record<string, unknown> | undefined)?.['elicitations']
         if (Array.isArray(elicitations) && elicitations.length > 0) {
           return new ToolResultBlock({
             toolUseId,
@@ -109,10 +109,10 @@ export class McpTool extends Tool {
 
     const record = item as Record<string, unknown>
 
-    switch (record.type) {
+    switch (record['type']) {
       case 'text':
-        if (typeof record.text === 'string') {
-          return new TextBlock(record.text)
+        if (typeof record['text'] === 'string') {
+          return new TextBlock(record['text'])
         }
         return new JsonBlock({ json: item as JSONValue })
 
@@ -134,8 +134,8 @@ export class McpTool extends Tool {
    * @returns ImageBlock or TextBlock fallback if format is unsupported
    */
   private _mapMcpImageContent(record: Record<string, unknown>): ToolResultContent {
-    const data = record.data
-    const mimeType = record.mimeType
+    const data = record['data']
+    const mimeType = record['mimeType']
 
     if (typeof data !== 'string' || typeof mimeType !== 'string') {
       logger.warn('content_type=<image> | mcp image content missing data or mimeType, falling back to json')
@@ -162,7 +162,7 @@ export class McpTool extends Tool {
    * @returns Mapped content block or undefined if unsupported
    */
   private _mapMcpEmbeddedResource(record: Record<string, unknown>): ToolResultContent {
-    const resource = record.resource
+    const resource = record['resource']
     if (!resource || typeof resource !== 'object') {
       return new JsonBlock({ json: record as JSONValue })
     }
@@ -170,21 +170,21 @@ export class McpTool extends Tool {
     const res = resource as Record<string, unknown>
 
     // Text resource
-    if (typeof res.text === 'string') {
-      return new TextBlock(res.text)
+    if (typeof res['text'] === 'string') {
+      return new TextBlock(res['text'])
     }
 
     // Blob resource
-    if (typeof res.blob === 'string' && typeof res.mimeType === 'string') {
-      const format = toMediaFormat(res.mimeType)
+    if (typeof res['blob'] === 'string' && typeof res['mimeType'] === 'string') {
+      const format = toMediaFormat(res['mimeType'])
       if (format && this._isImageFormat(format)) {
         return new ImageBlock({
           format,
-          source: { bytes: decodeBase64(res.blob) },
+          source: { bytes: decodeBase64(res['blob']) },
         })
       }
       // Non-image blob: fall back to json
-      logger.warn(`mime_type=<${res.mimeType}> | unsupported mcp resource blob mime type, falling back to json`)
+      logger.warn(`mime_type=<${res['mimeType']}> | unsupported mcp resource blob mime type, falling back to json`)
     }
 
     return new JsonBlock({ json: record as JSONValue })
@@ -202,7 +202,7 @@ export class McpTool extends Tool {
     // Safe cast to generic record to check properties
     const record = value as Record<string, unknown>
 
-    return Array.isArray(record.content)
+    return Array.isArray(record['content'])
   }
 
   /**

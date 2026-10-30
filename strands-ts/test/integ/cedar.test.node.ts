@@ -28,8 +28,8 @@ describe('CedarAuthorization integration', () => {
         policies: `${FIXTURES}/test.cedar`,
         entities: `${FIXTURES}/entities.json`,
         principalResolver: (state) => {
-          if (!state.user_id) return undefined
-          return { type: 'User', id: String(state.user_id) }
+          if (!state['user_id']) return undefined
+          return { type: 'User', id: String(state['user_id']) }
         },
       })
 
@@ -52,8 +52,8 @@ describe('CedarAuthorization integration', () => {
         policies: `${FIXTURES}/permit-search-deny-delete.cedar`,
         entities: `${FIXTURES}/entities.json`,
         principalResolver: (state) => {
-          if (!state.user_id) return undefined
-          return { type: 'User', id: String(state.user_id) }
+          if (!state['user_id']) return undefined
+          return { type: 'User', id: String(state['user_id']) }
         },
       })
 
@@ -76,8 +76,8 @@ describe('CedarAuthorization integration', () => {
         policies: `${FIXTURES}/permit-all.cedar`,
         entities: `${FIXTURES}/entities.json`,
         principalResolver: (state) => {
-          if (!state.user_id) return undefined
-          return { type: 'User', id: String(state.user_id) }
+          if (!state['user_id']) return undefined
+          return { type: 'User', id: String(state['user_id']) }
         },
       })
 

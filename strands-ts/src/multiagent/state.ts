@@ -102,15 +102,15 @@ export class NodeResult {
   static fromJSON(data: JSONValue): NodeResult {
     const json = data as Record<string, JSONValue>
     return new NodeResult({
-      nodeId: json.nodeId as string,
-      status: json.status as ResultStatus,
-      duration: json.duration as number,
-      content: (json.content as JSONValue[]).map((c) => contentBlockFromData(c as never)),
-      ...(json.error && { error: normalizeError(json.error) }),
-      ...(json.structuredOutput !== undefined && { structuredOutput: json.structuredOutput }),
-      ...(json.usage && { usage: json.usage as unknown as Usage }),
-      ...(json.interrupts && {
-        interrupts: (json.interrupts as JSONValue[]).map((i) => Interrupt.fromJSON(i as never)),
+      nodeId: json['nodeId'] as string,
+      status: json['status'] as ResultStatus,
+      duration: json['duration'] as number,
+      content: (json['content'] as JSONValue[]).map((c) => contentBlockFromData(c as never)),
+      ...(json['error'] && { error: normalizeError(json['error']) }),
+      ...(json['structuredOutput'] !== undefined && { structuredOutput: json['structuredOutput'] }),
+      ...(json['usage'] && { usage: json['usage'] as unknown as Usage }),
+      ...(json['interrupts'] && {
+        interrupts: (json['interrupts'] as JSONValue[]).map((i) => Interrupt.fromJSON(i as never)),
       }),
     })
   }
@@ -175,16 +175,16 @@ export class NodeState implements StateSerializable {
   /** Loads state from a previously serialized JSON value. */
   [loadStateFromJSONSymbol](json: JSONValue): void {
     const data = json as Record<string, JSONValue>
-    this.status = data.status as Status
-    this.terminus = data.terminus as boolean
-    this.startTime = data.startTime as number
+    this.status = data['status'] as Status
+    this.terminus = data['terminus'] as boolean
+    this.startTime = data['startTime'] as number
     this.results.length = 0
-    for (const entry of data.results as JSONValue[]) {
+    for (const entry of data['results'] as JSONValue[]) {
       this.results.push(NodeResult.fromJSON(entry))
     }
-    this.interrupts = ((data.interrupts as JSONValue[] | undefined) ?? []).map((i) => Interrupt.fromJSON(i as never))
-    if (data.interruptedSnapshot) {
-      this.interruptedSnapshot = data.interruptedSnapshot as unknown as Snapshot
+    this.interrupts = ((data['interrupts'] as JSONValue[] | undefined) ?? []).map((i) => Interrupt.fromJSON(i as never))
+    if (data['interruptedSnapshot']) {
+      this.interruptedSnapshot = data['interruptedSnapshot'] as unknown as Snapshot
     } else {
       delete this.interruptedSnapshot
     }
@@ -243,13 +243,13 @@ export class MultiAgentResult {
   static fromJSON(data: JSONValue): MultiAgentResult {
     const json = data as Record<string, JSONValue>
     return new MultiAgentResult({
-      status: json.status as ResultStatus,
-      results: (json.results as JSONValue[]).map(NodeResult.fromJSON),
-      content: (json.content as JSONValue[]).map((c) => contentBlockFromData(c as never)),
-      duration: json.duration as number,
-      ...(json.error && { error: normalizeError(json.error) }),
-      ...(json.interrupts && {
-        interrupts: (json.interrupts as JSONValue[]).map((i) => Interrupt.fromJSON(i as never)),
+      status: json['status'] as ResultStatus,
+      results: (json['results'] as JSONValue[]).map(NodeResult.fromJSON),
+      content: (json['content'] as JSONValue[]).map((c) => contentBlockFromData(c as never)),
+      duration: json['duration'] as number,
+      ...(json['error'] && { error: normalizeError(json['error']) }),
+      ...(json['interrupts'] && {
+        interrupts: (json['interrupts'] as JSONValue[]).map((i) => Interrupt.fromJSON(i as never)),
       }),
     })
   }
@@ -365,15 +365,15 @@ export class MultiAgentState implements StateSerializable {
   /** Loads state from a previously serialized JSON value. */
   [loadStateFromJSONSymbol](json: JSONValue): void {
     const data = json as Record<string, JSONValue>
-    ;(this as { startTime: number }).startTime = data.startTime as number
-    this.steps = data.steps as number
+    ;(this as { startTime: number }).startTime = data['startTime'] as number
+    this.steps = data['steps'] as number
     this.results.length = 0
-    for (const entry of data.results as JSONValue[]) {
+    for (const entry of data['results'] as JSONValue[]) {
       this.results.push(NodeResult.fromJSON(entry))
     }
-    loadStateSerializable(this.app, data.app as JSONValue)
+    loadStateSerializable(this.app, data['app'] as JSONValue)
     this._nodes.clear()
-    const nodes = data.nodes as Record<string, JSONValue> | undefined
+    const nodes = data['nodes'] as Record<string, JSONValue> | undefined
     if (nodes) {
       for (const [id, nodeData] of Object.entries(nodes)) {
         const nodeState = new NodeState()
@@ -381,8 +381,8 @@ export class MultiAgentState implements StateSerializable {
         this._nodes.set(id, nodeState)
       }
     }
-    if (data._pendingInput !== undefined) {
-      this._pendingInput = rehydratePendingInput(data._pendingInput)
+    if (data['_pendingInput'] !== undefined) {
+      this._pendingInput = rehydratePendingInput(data['_pendingInput'])
     } else {
       delete this._pendingInput
     }

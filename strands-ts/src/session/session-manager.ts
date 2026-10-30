@@ -353,22 +353,22 @@ export class SessionManager implements Plugin, MultiAgentPlugin {
 
     if (contextManager.stashIsDurable) {
       const storageType = contextManager.stash.storageTypeName
-      snapshot.data.stash = { location: 'external', storageType } satisfies StashSnapshotData
+      snapshot.data['stash'] = { location: 'external', storageType } satisfies StashSnapshotData
       return
     }
 
     const entries = await contextManager.stash.takeSnapshot()
     if (Object.keys(entries).length > 0) {
-      snapshot.data.stash = { location: 'inline', entries } satisfies StashSnapshotData
+      snapshot.data['stash'] = { location: 'inline', entries } satisfies StashSnapshotData
     }
   }
 
   private async _restoreStashData(agent: LocalAgent, snapshot: Snapshot): Promise<void> {
-    if (!('stash' in snapshot.data) || !snapshot.data.stash) return
+    if (!('stash' in snapshot.data) || !snapshot.data['stash']) return
     const stash = agent.contextManager?.stash
     if (!stash) return
 
-    const stashData = snapshot.data.stash as StashSnapshotData
+    const stashData = snapshot.data['stash'] as StashSnapshotData
     if (stashData.location === 'external') {
       const currentType = stash.storageTypeName
       if (stashData.storageType && currentType && stashData.storageType !== currentType) {

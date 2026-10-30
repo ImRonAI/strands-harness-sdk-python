@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, assert, describe, expect, it, vi } from 'vitest'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -25,6 +25,9 @@ import {
 import { ContextManager } from '@strands-agents/sdk/experimental'
 import { InMemoryStorage } from '@strands-agents/sdk/storage'
 import { BedrockModel } from '@strands-agents/sdk/models/bedrock'
+import { AnthropicModel } from '@strands-agents/sdk/models/anthropic'
+import { GoogleModel } from '@strands-agents/sdk/models/google'
+import { OpenAIModel } from '@strands-agents/sdk/models/openai'
 import { DockerSandbox } from '@strands-agents/sdk/sandbox/docker'
 import { makeFileEditor } from '@strands-agents/sdk/vended-tools/file-editor'
 import { makeShell } from '@strands-agents/sdk/vended-tools/shell'
@@ -380,6 +383,7 @@ describe('createHarness', () => {
 
   it('enables web_search on a supported provider from the default set', async () => {
     const agent = await createHarness({ model: 'openai/gpt-5.6-sol' })
+    assert.instanceOf(agent.model, OpenAIModel)
     const params = agent.model.getConfig().params as { tools: unknown }
     expect(params.tools).toEqual([{ type: 'web_search' }])
   })
@@ -415,6 +419,7 @@ describe('createHarness', () => {
       builtinTools: { web_search: 'exa' },
     })
     expect(toolNames(agent)).toContain('web_search')
+    assert.instanceOf(agent.model, OpenAIModel)
     expect(agent.model.getConfig().params).not.toHaveProperty('tools')
   })
 
@@ -431,28 +436,33 @@ describe('createHarness', () => {
     configureLogging({ debug: () => {}, info, warn: () => {}, error: () => {} })
     let agent = await createHarness({ model: 'bedrock-mantle/openai.gpt-5.6-luna' })
     expect(toolNames(agent)).not.toContain('web_search')
+    assert.instanceOf(agent.model, OpenAIModel)
     expect((agent.model.getConfig().params as { tools: unknown }).tools).toEqual([
       { type: 'web_search', external_web_access: true },
     ])
     agent = await createHarness({ model: 'bedrock-mantle/openai.gpt-oss-120b-1:0' })
     expect(toolNames(agent)).not.toContain('web_search')
+    assert.instanceOf(agent.model, OpenAIModel)
     expect(agent.model.getConfig().params).not.toHaveProperty('tools')
     expect(info).toHaveBeenCalledWith(expect.stringContaining('has no built-in web search'))
   })
 
   it('enables web_search when explicitly selected on a supported provider', async () => {
     const agent = await createHarness({ model: 'google/gemini-3.5-flash', builtinTools: ['read', 'web_search'] })
+    assert.instanceOf(agent.model, GoogleModel)
     expect(agent.model.getConfig().builtInTools).toEqual([{ googleSearch: {} }])
     expect(toolNames(agent)).not.toContain('web_search')
   })
 
   it('enables caching by default on bedrock', async () => {
     const agent = await createHarness()
+    assert.instanceOf(agent.model, BedrockModel)
     expect(agent.model.getConfig().cacheConfig).toEqual({ strategy: 'auto' })
   })
 
   it('enables caching by default on anthropic direct', async () => {
     const agent = await createHarness({ model: 'anthropic/claude-opus-4-8' })
+    assert.instanceOf(agent.model, AnthropicModel)
     expect(agent.model.getConfig().cacheConfig).toEqual({ strategy: 'auto' })
   })
 
@@ -483,6 +493,7 @@ describe('createHarness', () => {
 
   it('leaves no cacheConfig when caching is disabled', async () => {
     const agent = await createHarness({ caching: false })
+    assert.instanceOf(agent.model, BedrockModel)
     expect(agent.model.getConfig().cacheConfig).toBeUndefined()
   })
 
@@ -503,12 +514,14 @@ describe('createHarness', () => {
 
   it('uses the recommended level when effort is auto', async () => {
     const agent = await createHarness({ effort: 'auto' })
+    assert.instanceOf(agent.model, BedrockModel)
     const fields = agent.model.getConfig().additionalRequestFields as { output_config: { effort: string } }
     expect(fields.output_config.effort).toBe('high')
   })
 
   it('sends no reasoning fields when effort is off', async () => {
     const agent = await createHarness({ effort: 'off' })
+    assert.instanceOf(agent.model, BedrockModel)
     expect(agent.model.getConfig().additionalRequestFields).toBeUndefined()
   })
 
@@ -974,6 +987,7 @@ describe('subagent delegate (built child)', () => {
       { model: 'openai/gpt-5.6-sol', builtinTools: ['read', 'web_search', 'subagent'] },
       spec
     )
+    assert.instanceOf(child.model, OpenAIModel)
     expect((child.model.getConfig().params as { tools: unknown }).tools).toEqual([{ type: 'web_search' }])
   })
 
@@ -981,6 +995,7 @@ describe('subagent delegate (built child)', () => {
     const spec = new AgentSpec('x')
     spec.tools = ['read']
     const child = await buildChild({ model: 'openai/gpt-5.6-sol' }, spec)
+    assert.instanceOf(child.model, OpenAIModel)
     expect((child.model.getConfig().params as { tools: unknown }).tools).toEqual([{ type: 'web_search' }])
   })
 

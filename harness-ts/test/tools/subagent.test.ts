@@ -74,30 +74,35 @@ function fakeChild(results: ReturnType<typeof fakeResult>[], interruptList: unkn
 // Test messages are written as plain block shapes; a real parent holds SDK `Message`s whose blocks
 // carry `toJSON`, which the fork relies on to deep-copy. Build the real classes.
 function toBlock(block: Record<string, unknown>): ContentBlock | JsonBlock {
-  switch (block.type) {
+  switch (block['type']) {
     case 'textBlock':
-      return new TextBlock(block.text as string)
+      return new TextBlock(block['text'] as string)
     case 'toolUseBlock':
       return new ToolUseBlock(block as never)
     case 'toolResultBlock':
       return new ToolResultBlock({
         ...(block as { toolUseId: string; status: 'success' | 'error' }),
-        content: (block.content as Record<string, unknown>[]).map(toBlock) as never,
+        content: (block['content'] as Record<string, unknown>[]).map(toBlock) as never,
       })
     case 'jsonBlock':
-      return new JsonBlock({ json: block.json } as never)
+      return new JsonBlock({ json: block['json'] } as never)
     case 'imageBlock':
-      return new ImageBlock({ format: block.format, source: block.source } as never)
+      return new ImageBlock({ format: block['format'], source: block['source'] } as never)
     case 'reasoningBlock':
       return new ReasoningBlock(block as never)
     default:
-      throw new Error(`unknown test block ${String(block.type)}`)
+      throw new Error(`unknown test block ${String(block['type'])}`)
   }
 }
 
 function toMessage(message: unknown): Message {
   const m = message as { role: 'user' | 'assistant'; content: Record<string, unknown>[] }
-  return new Message({ role: m.role, content: m.content.map(toBlock) })
+  const content = m.content.map((block) => {
+    const converted = toBlock(block)
+    if (converted instanceof JsonBlock) throw new Error('jsonBlock is only valid inside a tool result')
+    return converted
+  })
+  return new Message({ role: m.role, content })
 }
 
 function fakeParent(messages: unknown[] = [], depth?: number) {
@@ -166,10 +171,10 @@ describe('subagent schema derivation', () => {
       new Set(['task', 'instructions', 'tools', 'model', 'context', 'last_messages'])
     )
     // The tools axis defaults to a multiple Choice over the inherited tools: an array-of-enum.
-    expect(p.tools.items.enum).toEqual(['read', 'shell'])
-    expect(p.model.enum).toEqual(['fast', 'deep'])
-    expect(p.context.enum).toEqual(['none', 'all'])
-    expect(p.last_messages.type).toBe('integer')
+    expect(p['tools'].items.enum).toEqual(['read', 'shell'])
+    expect(p['model'].enum).toEqual(['fast', 'deep'])
+    expect(p['context'].enum).toEqual(['none', 'all'])
+    expect(p['last_messages'].type).toBe('integer')
     expect((tool.toolSpec.inputSchema as any).required).toEqual(['task'])
   })
 
@@ -195,7 +200,7 @@ describe('subagent schema derivation', () => {
       instructions: new Fixed(null),
       tools: new Fixed(null),
     })
-    expect(props(tool).agent_type.enum).toEqual(['generalist', 'reviewer'])
+    expect(props(tool)['agent_type'].enum).toEqual(['generalist', 'reviewer'])
     expect(tool.toolSpec.description).toContain('reviews diffs')
   })
 
@@ -213,7 +218,7 @@ describe('subagent schema derivation', () => {
       },
       tools: new Choice([new Option('readonly', { value: 'read' }), new Option('sh', { value: 'shell' })], true),
     })
-    expect(props(tool).tools.items.enum).toEqual(['readonly', 'sh']) // enum shows the names
+    expect(props(tool)['tools'].items.enum).toEqual(['readonly', 'sh']) // enum shows the names
     await drive(tool, { task: 'x', tools: ['readonly'] })
     expect(captured?.tools).toEqual(['read']) // granted the value
   })
@@ -227,7 +232,7 @@ describe('subagent schema derivation', () => {
 
   it('exposes an mcp_servers array-of-enum over the inherited servers', () => {
     const tool = makeSubagent({ builder: noopBuilder, inheritedMcpServers: ['fs', 'api'] })
-    expect(props(tool).mcp_servers.items.enum).toEqual(['fs', 'api'])
+    expect(props(tool)['mcp_servers'].items.enum).toEqual(['fs', 'api'])
   })
 
   it('omits mcp_servers when the parent has no servers', () => {
@@ -272,7 +277,7 @@ describe('subagent schema derivation', () => {
   it('still offers last_messages when the only history mode is no_tools', () => {
     const tool = makeSubagent({ builder: noopBuilder, context: new Choice(['none', 'no_tools']) })
     const p = props(tool)
-    expect(p.context.enum).toEqual(['none', 'no_tools'])
+    expect(p['context'].enum).toEqual(['none', 'no_tools'])
     expect('last_messages' in p).toBe(true)
   })
 
@@ -291,7 +296,7 @@ describe('subagent schema derivation', () => {
       ]),
       tools: new Fixed(null),
     })
-    const modelProp = props(tool).model
+    const modelProp = props(tool)['model']
     expect(modelProp.enum).toEqual(['haiku', 'opus', 'sonnet'])
     expect(modelProp.description).toContain('- haiku: cheap/fast')
     expect(modelProp.description).toContain('- opus: best quality')
@@ -300,14 +305,14 @@ describe('subagent schema derivation', () => {
 
   it('renders a multiple Choice as an array-of-enum', () => {
     const tool = makeSubagent({ builder: noopBuilder, tools: new Choice(['read', 'write', 'shell'], true) })
-    const toolsProp = props(tool).tools
+    const toolsProp = props(tool)['tools']
     expect(toolsProp.type).toBe('array')
     expect(toolsProp.items.enum).toEqual(['read', 'write', 'shell'])
   })
 
   it('keeps the base description only when a Choice has no per-option descriptions', () => {
     const tool = makeSubagent({ builder: noopBuilder, context: new Choice(['none', 'all']), tools: new Fixed(null) })
-    const contextProp = props(tool).context
+    const contextProp = props(tool)['context']
     expect(contextProp.enum).toEqual(['none', 'all'])
     expect(contextProp.description).not.toContain('Options:')
   })

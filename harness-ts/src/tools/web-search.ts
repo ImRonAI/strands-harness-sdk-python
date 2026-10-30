@@ -95,7 +95,7 @@ async function exaCall(query: string, maxResults: number, apiKey: string | undef
 /** Search backend over Exa's hosted MCP server; `apiKey` defaults to `EXA_API_KEY` (read per call). */
 export function exaBackend(apiKey?: string): SearchBackend {
   return async (query, maxResults) => {
-    const key = apiKey ?? process.env.EXA_API_KEY
+    const key = apiKey ?? process.env['EXA_API_KEY']
     try {
       return await exaCall(query, maxResults, key)
     } catch (err) {

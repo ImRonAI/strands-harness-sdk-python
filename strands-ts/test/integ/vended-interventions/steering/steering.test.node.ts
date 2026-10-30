@@ -47,14 +47,14 @@ describe.skipIf(bedrock.skip)('Steering integration', () => {
 
     const toolMetrics = result.metrics?.toolMetrics ?? {}
 
-    if (toolMetrics.send_email) {
-      expect(toolMetrics.send_email.callCount).toBeGreaterThanOrEqual(1)
-      expect(toolMetrics.send_email.successCount).toBe(0)
+    if (toolMetrics['send_email']) {
+      expect(toolMetrics['send_email'].callCount).toBeGreaterThanOrEqual(1)
+      expect(toolMetrics['send_email'].successCount).toBe(0)
     }
 
-    expect(toolMetrics.send_notification).toBeDefined()
-    expect(toolMetrics.send_notification!.callCount).toBeGreaterThanOrEqual(1)
-    expect(toolMetrics.send_notification!.successCount).toBeGreaterThanOrEqual(1)
+    expect(toolMetrics['send_notification']).toBeDefined()
+    expect(toolMetrics['send_notification']!.callCount).toBeGreaterThanOrEqual(1)
+    expect(toolMetrics['send_notification']!.successCount).toBeGreaterThanOrEqual(1)
   })
 
   it('ToolLedgerProvider captures tool calls during a real invocation', async () => {
@@ -64,11 +64,11 @@ describe.skipIf(bedrock.skip)('Steering integration', () => {
       override readonly name = 'ledger-check'
 
       override async beforeToolCall(event: BeforeToolCallEvent): Promise<Proceed> {
-        const calls = (ledger.context.calls ?? []) as Array<Record<string, unknown>>
-        const current = calls.find((c) => c.name === event.toolUse.name)
+        const calls = (ledger.context['calls'] ?? []) as Array<Record<string, unknown>>
+        const current = calls.find((c) => c['name'] === event.toolUse.name)
         expect(current).toBeDefined()
-        expect(current?.args).toEqual(event.toolUse.input)
-        expect(current?.status).toBe('pending')
+        expect(current?.['args']).toEqual(event.toolUse.input)
+        expect(current?.['status']).toBe('pending')
         return proceed()
       }
     }
@@ -84,16 +84,16 @@ describe.skipIf(bedrock.skip)('Steering integration', () => {
 
     await agent.invoke('Send a notification to alice saying test message')
 
-    const calls = (ledger.context.calls ?? []) as Array<Record<string, unknown>>
+    const calls = (ledger.context['calls'] ?? []) as Array<Record<string, unknown>>
     expect(calls.length).toBeGreaterThanOrEqual(1)
 
     const last = calls[calls.length - 1]!
-    expect(last.name).toBe('send_notification')
-    const args = last.args as Record<string, string>
-    expect(args.recipient).toBe('alice')
-    expect(args.message).toContain('test message')
-    expect(last.status).toBe('success')
-    expect(last.endTime).toBeTypeOf('string')
-    expect(last.error).toBeNull()
+    expect(last['name']).toBe('send_notification')
+    const args = last['args'] as Record<string, string>
+    expect(args['recipient']).toBe('alice')
+    expect(args['message']).toContain('test message')
+    expect(last['status']).toBe('success')
+    expect(last['endTime']).toBeTypeOf('string')
+    expect(last['error']).toBeNull()
   })
 })

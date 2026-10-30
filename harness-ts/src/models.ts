@@ -132,7 +132,7 @@ function claudeThinking(effort: string): Record<string, unknown> {
 }
 
 function claudeExtendedThinking(effort: string, maxTokens: number): Record<string, unknown> {
-  const budget = Math.min(EXTENDED_THINKING_BUDGETS[effort] ?? EXTENDED_THINKING_BUDGETS.high!, maxTokens - 1)
+  const budget = Math.min(EXTENDED_THINKING_BUDGETS[effort] ?? EXTENDED_THINKING_BUDGETS['high']!, maxTokens - 1)
   return { thinking: { type: 'enabled', budget_tokens: budget } }
 }
 
@@ -201,7 +201,7 @@ async function bedrock(modelId: string, effort: string | null, _webSearch: boole
   const cacheConfig = caching ? { strategy: 'auto' as const } : undefined
   const thinking = bedrockThinking(modelId, effort)
   const maxTokens = claudeMaxTokens(modelId)
-  const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION
+  const region = process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION']
   return new BedrockModel({
     modelId,
     ...(region ? { region } : {}),
@@ -234,11 +234,11 @@ async function openai(modelId: string, effort: string | null, webSearch: boolean
   const { OpenAIModel } = await import('@strands-agents/sdk/models/openai')
   const params: Record<string, unknown> = {}
   if (effort !== null) {
-    params.reasoning = { effort }
+    params['reasoning'] = { effort }
   }
   // The Responses API merges built-in tools carried in `params` with the agent's function tools.
   if (webSearch) {
-    params.tools = [{ type: 'web_search' }]
+    params['tools'] = [{ type: 'web_search' }]
   }
   return new OpenAIModel(Object.keys(params).length === 0 ? { modelId } : { modelId, params })
 }
@@ -253,10 +253,10 @@ async function bedrockMantle(
   const { OpenAIModel } = await import('@strands-agents/sdk/models/openai')
   const params: Record<string, unknown> = {}
   if (effort !== null) {
-    params.reasoning = { effort }
+    params['reasoning'] = { effort }
   }
   if (webSearch) {
-    params.tools = [{ type: 'web_search', external_web_access: true }]
+    params['tools'] = [{ type: 'web_search', external_web_access: true }]
   }
   return new OpenAIModel({
     modelId,
@@ -281,8 +281,8 @@ async function ollama(modelId: string, _effort: string | null, _webSearch: boole
   return new OpenAIModel({
     api: 'chat',
     modelId,
-    apiKey: process.env.OLLAMA_API_KEY ?? 'ollama',
-    clientConfig: { baseURL: openAICompatibleBaseUrl(process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434') },
+    apiKey: process.env['OLLAMA_API_KEY'] ?? 'ollama',
+    clientConfig: { baseURL: openAICompatibleBaseUrl(process.env['OLLAMA_HOST'] ?? 'http://127.0.0.1:11434') },
   })
 }
 
@@ -297,9 +297,9 @@ async function litellm(
   return new OpenAIModel({
     api: 'chat',
     modelId,
-    apiKey: process.env.LITELLM_API_KEY ?? 'litellm',
+    apiKey: process.env['LITELLM_API_KEY'] ?? 'litellm',
     clientConfig: {
-      baseURL: openAICompatibleBaseUrl(process.env.LITELLM_BASE_URL ?? 'http://127.0.0.1:4000'),
+      baseURL: openAICompatibleBaseUrl(process.env['LITELLM_BASE_URL'] ?? 'http://127.0.0.1:4000'),
     },
   })
 }
@@ -648,11 +648,11 @@ function concreteModel(model: Model | ModelRouter): Model {
 function bedrockWebFetchModel(name: string): string | undefined {
   const family = bedrockFamily(name)
   if (family.startsWith('anthropic.')) {
-    return WEB_FETCH_MODELS.bedrock!
+    return WEB_FETCH_MODELS['bedrock']!
   }
   if (family.startsWith('openai.')) {
     const prefix = name.slice(0, name.length - family.length)
-    return `${prefix}openai.${WEB_FETCH_MODELS.openai}`
+    return `${prefix}openai.${WEB_FETCH_MODELS['openai']}`
   }
   return undefined
 }

@@ -43,11 +43,11 @@ describe('ToolLedgerProvider', () => {
     const { agent, hookRegistry } = setupAgent(provider)
 
     expect(provider.context.type).toBe('toolLedger')
-    expect(provider.context.calls).toEqual([])
+    expect(provider.context['calls']).toEqual([])
 
     await hookRegistry.invokeCallbacks(makeBefore(agent))
 
-    const calls = provider.context.calls as Array<Record<string, unknown>>
+    const calls = provider.context['calls'] as Array<Record<string, unknown>>
     expect(calls).toHaveLength(1)
     expect(calls[0]).toMatchObject({
       id: 'tu-1',
@@ -64,7 +64,7 @@ describe('ToolLedgerProvider', () => {
     await hookRegistry.invokeCallbacks(makeBefore(agent))
     await hookRegistry.invokeCallbacks(makeAfter(agent, 'success'))
 
-    const calls = provider.context.calls as Array<Record<string, unknown>>
+    const calls = provider.context['calls'] as Array<Record<string, unknown>>
     expect(calls).toHaveLength(1)
     expect(calls[0]).toMatchObject({
       id: 'tu-1',
@@ -83,7 +83,7 @@ describe('ToolLedgerProvider', () => {
     await hookRegistry.invokeCallbacks(makeBefore(agent))
     await hookRegistry.invokeCallbacks(makeAfter(agent, 'error', new Error('boom')))
 
-    const calls = provider.context.calls as Array<Record<string, unknown>>
+    const calls = provider.context['calls'] as Array<Record<string, unknown>>
     expect(calls[0]).toMatchObject({
       id: 'tu-1',
       name: 'searchWeb',
@@ -109,8 +109,8 @@ describe('ToolLedgerProvider', () => {
       )
     }
 
-    const calls = provider.context.calls as Array<Record<string, unknown>>
+    const calls = provider.context['calls'] as Array<Record<string, unknown>>
     expect(calls).toHaveLength(2)
-    expect(calls.map((c) => c.id)).toEqual(['b', 'c'])
+    expect(calls.map((c) => c['id'])).toEqual(['b', 'c'])
   })
 })

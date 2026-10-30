@@ -268,7 +268,7 @@ function buildSchema({ presets, instructions, tools, mcpServers, model, context 
 
   const presetNames = Object.keys(presets)
   if (presetNames.length > 0) {
-    props.agent_type = {
+    props['agent_type'] = {
       type: 'string',
       enum: presetNames,
       description: 'Which subagent role to use. Omit to use the default.',
@@ -276,17 +276,20 @@ function buildSchema({ presets, instructions, tools, mcpServers, model, context 
   }
 
   if (instructions instanceof Open) {
-    props.instructions = { type: 'string', description: "A system prompt defining the subagent's role." }
+    props['instructions'] = { type: 'string', description: "A system prompt defining the subagent's role." }
   } else if (instructions instanceof Choice) {
-    props.instructions = choiceProp(instructions, "A system prompt defining the subagent's role.")
+    props['instructions'] = choiceProp(instructions, "A system prompt defining the subagent's role.")
   }
 
   if (tools instanceof Choice) {
-    props.tools = choiceProp(tools, 'Subset of tools to grant the subagent. Fewer is safer; it cannot exceed your own.')
+    props['tools'] = choiceProp(
+      tools,
+      'Subset of tools to grant the subagent. Fewer is safer; it cannot exceed your own.'
+    )
   }
 
   if (mcpServers instanceof Choice) {
-    props.mcp_servers = choiceProp(
+    props['mcp_servers'] = choiceProp(
       mcpServers,
       'Subset of MCP servers whose tools to grant the subagent. Fewer is safer; it cannot exceed ' +
         'your own. Omit to grant all of them.'
@@ -294,19 +297,19 @@ function buildSchema({ presets, instructions, tools, mcpServers, model, context 
   }
 
   if (model instanceof Choice) {
-    props.model = choiceProp(model, 'Which model the subagent runs on.')
+    props['model'] = choiceProp(model, 'Which model the subagent runs on.')
   }
 
   if (context instanceof Choice) {
     const modes = context.normalized().map((option) => String(option.value))
-    props.context = choiceProp(
+    props['context'] = choiceProp(
       context,
       "How much of this conversation the subagent sees: 'none' (fresh start), 'all' (full history " +
         "including tool calls and their results — can be large), 'no_tools' (text turns only — tool calls and their results removed). " +
         'More context costs more tokens.'
     )
     if (modes.some((mode) => mode !== 'none')) {
-      props.last_messages = {
+      props['last_messages'] = {
         type: 'integer',
         description:
           'Optional: limit the shared context to the last N messages. Omit to share all of the ' + 'selected context.',
@@ -338,9 +341,9 @@ interface ResolveArgs {
  */
 function resolveSpec(raw: Record<string, JSONValue>, args: ResolveArgs): AgentSpec {
   const { presets, defaultPreset, instructions, tools, mcpServers, model, context, allowed, allowedMcp } = args
-  const task = String(raw.task)
+  const task = String(raw['task'])
   // agent_type is a closed enum; `Object.hasOwn` (not `in`) so "constructor" can't resolve as a preset.
-  const rawAgentType = raw.agent_type
+  const rawAgentType = raw['agent_type']
   const isKnownPreset = typeof rawAgentType === 'string' && Object.hasOwn(presets, rawAgentType)
   if (rawAgentType !== undefined && rawAgentType !== null && !isKnownPreset) {
     throw new Error(
@@ -357,9 +360,9 @@ function resolveSpec(raw: Record<string, JSONValue>, args: ResolveArgs): AgentSp
 
   // instructions — honored only when the axis exposes one (Open, or a Choice offering the name).
   if ('instructions' in raw && instructions instanceof Open) {
-    spec.instructions = String(raw.instructions)
-  } else if ('instructions' in raw && instructions instanceof Choice && instructions.has(String(raw.instructions))) {
-    spec.instructions = String(instructions.valueFor(String(raw.instructions)))
+    spec.instructions = String(raw['instructions'])
+  } else if ('instructions' in raw && instructions instanceof Choice && instructions.has(String(raw['instructions']))) {
+    spec.instructions = String(instructions.valueFor(String(raw['instructions'])))
   } else if (preset !== undefined) {
     spec.instructions = preset.instructions ?? null
   } else if (instructions instanceof Fixed) {
@@ -368,7 +371,11 @@ function resolveSpec(raw: Record<string, JSONValue>, args: ResolveArgs): AgentSp
 
   // tools — model picks option names; each maps to its value (the real tool name granted), clamped.
   if ('tools' in raw && allowed !== null && tools instanceof Choice) {
-    const requested = Array.isArray(raw.tools) ? raw.tools : typeof raw.tools === 'string' ? [raw.tools] : []
+    const requested = Array.isArray(raw['tools'])
+      ? raw['tools']
+      : typeof raw['tools'] === 'string'
+        ? [raw['tools']]
+        : []
     spec.tools = requested
       .map((t) => String(t))
       .filter((t) => allowed.includes(t))
@@ -388,10 +395,10 @@ function resolveSpec(raw: Record<string, JSONValue>, args: ResolveArgs): AgentSp
 
   // mcp_servers — model picks server names, clamped to the parent's set; omitted inherits all.
   if ('mcp_servers' in raw && allowedMcp !== null && mcpServers instanceof Choice) {
-    const requested = Array.isArray(raw.mcp_servers)
-      ? raw.mcp_servers
-      : typeof raw.mcp_servers === 'string'
-        ? [raw.mcp_servers]
+    const requested = Array.isArray(raw['mcp_servers'])
+      ? raw['mcp_servers']
+      : typeof raw['mcp_servers'] === 'string'
+        ? [raw['mcp_servers']]
         : []
     spec.mcpServers = requested
       .map((n) => String(n))
@@ -404,8 +411,8 @@ function resolveSpec(raw: Record<string, JSONValue>, args: ResolveArgs): AgentSp
   }
 
   // model — the picked name maps back to its value; an off-enum name is ignored.
-  if ('model' in raw && model instanceof Choice && model.has(String(raw.model))) {
-    spec.model = model.valueFor(String(raw.model)) as Model | string
+  if ('model' in raw && model instanceof Choice && model.has(String(raw['model']))) {
+    spec.model = model.valueFor(String(raw['model'])) as Model | string
   } else if (preset !== undefined && preset.model !== undefined) {
     spec.model = preset.model
   } else if (model instanceof Fixed) {
@@ -413,8 +420,8 @@ function resolveSpec(raw: Record<string, JSONValue>, args: ResolveArgs): AgentSp
   }
 
   // context — honored only when the Choice offers the name; off-enum can't flip a Fixed('none') delegate.
-  if ('context' in raw && context instanceof Choice && context.has(String(raw.context))) {
-    spec.context = String(context.valueFor(String(raw.context))) as ContextMode
+  if ('context' in raw && context instanceof Choice && context.has(String(raw['context']))) {
+    spec.context = String(context.valueFor(String(raw['context']))) as ContextMode
   } else if (preset !== undefined) {
     spec.context = preset.context
     spec.lastMessages = preset.lastMessages
@@ -423,8 +430,8 @@ function resolveSpec(raw: Record<string, JSONValue>, args: ResolveArgs): AgentSp
   }
 
   // last_messages — a model-supplied cap wins when the axis exposes it.
-  if ('last_messages' in raw && raw.last_messages !== null && raw.last_messages !== undefined) {
-    const parsed = Number(raw.last_messages)
+  if ('last_messages' in raw && raw['last_messages'] !== null && raw['last_messages'] !== undefined) {
+    const parsed = Number(raw['last_messages'])
     spec.lastMessages = Number.isFinite(parsed) ? Math.trunc(parsed) : null
   }
 

@@ -11,7 +11,7 @@ vi.mock('@strands-agents/sdk/telemetry', () => ({ setupTracer: (...args: unknown
 describe('setupTelemetry', () => {
   beforeEach(() => {
     delete process.env[TRACES_EXPORTER_ENV_VAR]
-    delete process.env.OTEL_EXPORTER_OTLP_ENDPOINT
+    delete process.env['OTEL_EXPORTER_OTLP_ENDPOINT']
     setupTracer.mockClear()
     resetTelemetry()
     resetWarnOnce()
@@ -19,7 +19,7 @@ describe('setupTelemetry', () => {
 
   afterEach(() => {
     delete process.env[TRACES_EXPORTER_ENV_VAR]
-    delete process.env.OTEL_EXPORTER_OTLP_ENDPOINT
+    delete process.env['OTEL_EXPORTER_OTLP_ENDPOINT']
     resetTelemetry()
     resetWarnOnce()
   })
@@ -30,38 +30,38 @@ describe('setupTelemetry', () => {
   })
 
   it('does not enable tracing from an endpoint alone', async () => {
-    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = 'http://localhost:4318'
+    process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'http://localhost:4318'
     await setupTelemetry()
     expect(setupTracer).not.toHaveBeenCalled()
   })
 
   it('wires the OTLP exporter from the selector', async () => {
-    process.env.OTEL_TRACES_EXPORTER = 'otlp'
+    process.env['OTEL_TRACES_EXPORTER'] = 'otlp'
     await setupTelemetry()
     expect(setupTracer).toHaveBeenCalledWith({ exporters: { otlp: true, console: false } })
   })
 
   it('wires the console exporter from the selector', async () => {
-    process.env.OTEL_TRACES_EXPORTER = 'console'
+    process.env['OTEL_TRACES_EXPORTER'] = 'console'
     await setupTelemetry()
     expect(setupTracer).toHaveBeenCalledWith({ exporters: { otlp: false, console: true } })
   })
 
   it('wires both when the selector lists them', async () => {
-    process.env.OTEL_TRACES_EXPORTER = 'otlp, console'
+    process.env['OTEL_TRACES_EXPORTER'] = 'otlp, console'
     await setupTelemetry()
     expect(setupTracer).toHaveBeenCalledWith({ exporters: { otlp: true, console: true } })
   })
 
   it('disables tracing when the selector is none', async () => {
-    process.env.OTEL_TRACES_EXPORTER = 'none'
+    process.env['OTEL_TRACES_EXPORTER'] = 'none'
     await setupTelemetry()
     expect(setupTracer).not.toHaveBeenCalled()
   })
 
   it('warns and skips an unsupported exporter', async () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
-    process.env.OTEL_TRACES_EXPORTER = 'zipkin'
+    process.env['OTEL_TRACES_EXPORTER'] = 'zipkin'
     await setupTelemetry()
     expect(setupTracer).not.toHaveBeenCalled()
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('zipkin'))
@@ -69,13 +69,13 @@ describe('setupTelemetry', () => {
   })
 
   it('still wires the supported exporters alongside an unsupported one', async () => {
-    process.env.OTEL_TRACES_EXPORTER = 'zipkin,otlp'
+    process.env['OTEL_TRACES_EXPORTER'] = 'zipkin,otlp'
     await setupTelemetry()
     expect(setupTracer).toHaveBeenCalledWith({ exporters: { otlp: true, console: false } })
   })
 
   it('runs once per process', async () => {
-    process.env.OTEL_TRACES_EXPORTER = 'otlp'
+    process.env['OTEL_TRACES_EXPORTER'] = 'otlp'
     await setupTelemetry()
     await setupTelemetry()
     await setupTelemetry()

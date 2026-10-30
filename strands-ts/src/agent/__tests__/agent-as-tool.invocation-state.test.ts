@@ -12,7 +12,7 @@ describe('AgentAsTool invocationState forwarding', () => {
     let innerSawState: InvocationState | undefined
     inner.addHook(BeforeModelCallEvent, (event) => {
       innerSawState = event.invocationState
-      event.invocationState.innerTouched = true
+      event.invocationState['innerTouched'] = true
     })
 
     const outerModel = new MockMessageModel()

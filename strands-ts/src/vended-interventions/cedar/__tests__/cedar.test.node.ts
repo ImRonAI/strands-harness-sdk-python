@@ -32,8 +32,8 @@ describe('CedarAuthorization', () => {
         policies: `${FIXTURES}/test.cedar`,
         entities,
         principalResolver: (state) => {
-          if (!state.user_id) return undefined
-          return { type: 'User', id: String(state.user_id) }
+          if (!state['user_id']) return undefined
+          return { type: 'User', id: String(state['user_id']) }
         },
       })
 
@@ -189,7 +189,7 @@ describe('CedarAuthorization', () => {
         entities,
         principalResolver: () => ({ type: 'User', id: 'alice' }),
         contextEnricher: ({ invocationState }) => ({
-          environment: (invocationState.environment as string) ?? 'unknown',
+          environment: (invocationState['environment'] as string) ?? 'unknown',
         }),
       })
 
@@ -223,8 +223,8 @@ describe('CedarAuthorization', () => {
         policies: `${FIXTURES}/test.cedar`,
         entities,
         principalResolver: (state) => {
-          if (!state.user_id) return undefined
-          return { type: 'User', id: String(state.user_id) }
+          if (!state['user_id']) return undefined
+          return { type: 'User', id: String(state['user_id']) }
         },
       })
 
@@ -839,8 +839,8 @@ describe('CedarAuthorization', () => {
           { uid: { type: 'Agent::Resource', id: 'default' }, attrs: {}, parents: [] },
         ],
         principalResolver: (state) => {
-          if (!state.user_id) return undefined
-          return { type: 'Agent::User', id: String(state.user_id) }
+          if (!state['user_id']) return undefined
+          return { type: 'Agent::User', id: String(state['user_id']) }
         },
       })
 
@@ -870,8 +870,8 @@ describe('CedarAuthorization', () => {
           { uid: { type: 'Agent::Resource', id: 'default' }, attrs: {}, parents: [] },
         ],
         principalResolver: (state) => {
-          if (!state.user_id) return undefined
-          return { type: 'Agent::User', id: String(state.user_id) }
+          if (!state['user_id']) return undefined
+          return { type: 'Agent::User', id: String(state['user_id']) }
         },
       })
 

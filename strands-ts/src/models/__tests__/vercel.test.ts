@@ -1006,7 +1006,7 @@ describe('VercelModel', () => {
       const tools = args.tools ?? []
       for (let index = tools.length - 1; index >= 0; index--) {
         const tool = tools[index]
-        if (tool?.type === 'function') return tool.providerOptions?.anthropic?.cacheControl
+        if (tool?.type === 'function') return tool.providerOptions?.['anthropic']?.['cacheControl']
       }
       return undefined
     }
@@ -1016,13 +1016,13 @@ describe('VercelModel', () => {
       const lastUser = [...args.prompt].reverse().find((message) => message.role === 'user')
       if (lastUser?.role !== 'user') return undefined
       const lastPart = lastUser.content[lastUser.content.length - 1]
-      return lastPart?.providerOptions?.anthropic?.cacheControl
+      return lastPart?.providerOptions?.['anthropic']?.['cacheControl']
     }
 
     /** cacheControl on the system message. */
     const systemCacheControl = (args: LanguageModelV3CallOptions): unknown => {
       const system = args.prompt.find((message) => message.role === 'system')
-      return system?.providerOptions?.anthropic?.cacheControl
+      return system?.providerOptions?.['anthropic']?.['cacheControl']
     }
 
     it('strips cacheConfig from downstream call settings', async () => {
@@ -1095,7 +1095,7 @@ describe('VercelModel', () => {
         await collect(userMessages)
 
         const args = callArgs()
-        expect(args.providerOptions?.anthropic).toEqual({ thinking: { type: 'enabled' } })
+        expect(args.providerOptions?.['anthropic']).toEqual({ thinking: { type: 'enabled' } })
         expect(messageCacheControl(args)).toEqual({ type: 'ephemeral', ttl: '1h' })
       })
 
@@ -1104,7 +1104,7 @@ describe('VercelModel', () => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, config, 'anthropic.messages')
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai).toBeUndefined()
+        expect(callArgs().providerOptions?.['openai']).toBeUndefined()
         expect(messageCacheControl(callArgs())).toEqual({ type: 'ephemeral' })
       })
 
@@ -1134,8 +1134,11 @@ describe('VercelModel', () => {
 
         const lastUser = [...callArgs().prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
-        expect(lastUser.content[0]?.providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral', ttl: '1h' })
-        expect(lastUser.content[1]?.providerOptions?.anthropic?.cacheControl).toBeUndefined()
+        expect(lastUser.content[0]?.providerOptions?.['anthropic']?.['cacheControl']).toEqual({
+          type: 'ephemeral',
+          ttl: '1h',
+        })
+        expect(lastUser.content[1]?.providerOptions?.['anthropic']?.['cacheControl']).toBeUndefined()
       })
 
       it('skips the conversation breakpoint when every content block is rebuilt each call', async () => {
@@ -1145,7 +1148,9 @@ describe('VercelModel', () => {
 
         const lastUser = [...callArgs().prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
-        expect(lastUser.content.every((part) => part.providerOptions?.anthropic?.cacheControl === undefined)).toBe(true)
+        expect(
+          lastUser.content.every((part) => part.providerOptions?.['anthropic']?.['cacheControl'] === undefined)
+        ).toBe(true)
       })
 
       it('applies markers for an explicit anthropic strategy without warning', async () => {
@@ -1170,8 +1175,11 @@ describe('VercelModel', () => {
 
         const lastUser = [...callArgs().prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
-        expect(lastUser.content[0]?.providerOptions?.anthropic?.cacheControl).toBeUndefined()
-        expect(lastUser.content[1]?.providerOptions?.anthropic?.cacheControl).toEqual({ type: 'ephemeral', ttl: '1h' })
+        expect(lastUser.content[0]?.providerOptions?.['anthropic']?.['cacheControl']).toBeUndefined()
+        expect(lastUser.content[1]?.providerOptions?.['anthropic']?.['cacheControl']).toEqual({
+          type: 'ephemeral',
+          ttl: '1h',
+        })
       })
     })
 
@@ -1181,14 +1189,14 @@ describe('VercelModel', () => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, config, provider)
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai?.promptCacheKey).toBe('tenant-42')
+        expect(callArgs().providerOptions?.['openai']?.['promptCacheKey']).toBe('tenant-42')
       })
 
       it('omits the openai namespace entirely when nothing maps onto it', async () => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, { cacheConfig: {} }, 'openai.chat')
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai).toBeUndefined()
+        expect(callArgs().providerOptions?.['openai']).toBeUndefined()
       })
 
       it('lets an explicit promptCacheKey in providerOptions win over cacheConfig', async () => {
@@ -1199,21 +1207,21 @@ describe('VercelModel', () => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, config, 'openai.chat')
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai?.promptCacheKey).toBe('explicit')
+        expect(callArgs().providerOptions?.['openai']?.['promptCacheKey']).toBe('explicit')
       })
 
       it.each(['24h', 'in_memory'])('maps retention-literal ttl %s to promptCacheRetention', async (ttl) => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, { cacheConfig: { ttl } }, 'openai.chat')
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai?.promptCacheRetention).toBe(ttl)
+        expect(callArgs().providerOptions?.['openai']?.['promptCacheRetention']).toBe(ttl)
       })
 
       it('ignores a non-retention ttl and warns once', async () => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, { cacheConfig: { ttl: '5m' } }, 'openai.chat')
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai?.promptCacheRetention).toBeUndefined()
+        expect(callArgs().providerOptions?.['openai']?.['promptCacheRetention']).toBeUndefined()
         expect(warnOnce).toHaveBeenCalledWith(
           expect.objectContaining({ warn: expect.any(Function) }),
           expect.stringContaining('ttl=<5m> | cacheConfig.ttl is not an openai retention value')
@@ -1228,7 +1236,7 @@ describe('VercelModel', () => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, config, 'openai.chat')
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai?.promptCacheRetention).toBe('24h')
+        expect(callArgs().providerOptions?.['openai']?.['promptCacheRetention']).toBe('24h')
       })
 
       it('does not warn about an unsupported ttl when an explicit promptCacheRetention already wins', async () => {
@@ -1239,7 +1247,7 @@ describe('VercelModel', () => {
         const { collect, callArgs } = setupCaptureTest(minimalParts, config, 'openai.chat')
         await collect(userMessages)
 
-        expect(callArgs().providerOptions?.openai?.promptCacheRetention).toBe('24h')
+        expect(callArgs().providerOptions?.['openai']?.['promptCacheRetention']).toBe('24h')
         expect(warnOnce).not.toHaveBeenCalledWith(
           expect.objectContaining({ warn: expect.any(Function) }),
           expect.stringContaining('not an openai retention value')
@@ -1266,7 +1274,7 @@ describe('VercelModel', () => {
       /** cachePoint on the system message. */
       const bedrockSystemCachePoint = (args: LanguageModelV3CallOptions): unknown => {
         const system = args.prompt.find((message) => message.role === 'system')
-        return system?.providerOptions?.bedrock?.cachePoint
+        return system?.providerOptions?.['bedrock']?.['cachePoint']
       }
 
       /** cachePoint on the last content part of the last user message. */
@@ -1274,14 +1282,14 @@ describe('VercelModel', () => {
         const lastUser = [...args.prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') return undefined
         const lastPart = lastUser.content[lastUser.content.length - 1]
-        return lastPart?.providerOptions?.bedrock?.cachePoint
+        return lastPart?.providerOptions?.['bedrock']?.['cachePoint']
       }
 
       /** cachePoint on any function tool. */
       const bedrockToolCachePoint = (args: LanguageModelV3CallOptions): unknown => {
         for (const tool of args.tools ?? []) {
-          if (tool.type === 'function' && tool.providerOptions?.bedrock?.cachePoint !== undefined) {
-            return tool.providerOptions.bedrock.cachePoint
+          if (tool.type === 'function' && tool.providerOptions?.['bedrock']?.['cachePoint'] !== undefined) {
+            return tool.providerOptions['bedrock']['cachePoint']
           }
         }
         return undefined
@@ -1387,7 +1395,7 @@ describe('VercelModel', () => {
         await collect(userMessages)
 
         const args = callArgs()
-        expect(args.providerOptions?.bedrock).toEqual({ reasoningConfig: { type: 'enabled' } })
+        expect(args.providerOptions?.['bedrock']).toEqual({ reasoningConfig: { type: 'enabled' } })
         expect(bedrockMessageCachePoint(args)).toEqual({ type: 'default', ttl: '1h' })
       })
 
@@ -1409,8 +1417,8 @@ describe('VercelModel', () => {
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
         const textPart = lastUser.content.find((part) => part.type === 'text')
         const documentPart = lastUser.content.find((part) => part.type === 'file')
-        expect(textPart?.providerOptions?.bedrock?.cachePoint).toEqual({ type: 'default', ttl: '1h' })
-        expect(documentPart?.providerOptions?.bedrock?.cachePoint).toBeUndefined()
+        expect(textPart?.providerOptions?.['bedrock']?.['cachePoint']).toEqual({ type: 'default', ttl: '1h' })
+        expect(documentPart?.providerOptions?.['bedrock']?.['cachePoint']).toBeUndefined()
       })
 
       it('skips the cache point when the last user message is only non-pdf documents', async () => {
@@ -1426,7 +1434,9 @@ describe('VercelModel', () => {
 
         const lastUser = [...callArgs().prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
-        expect(lastUser.content.every((part) => part.providerOptions?.bedrock?.cachePoint === undefined)).toBe(true)
+        expect(lastUser.content.every((part) => part.providerOptions?.['bedrock']?.['cachePoint'] === undefined)).toBe(
+          true
+        )
       })
 
       it('rides the conversation cache point onto an earlier user turn when the final turn is tool results only', async () => {
@@ -1464,8 +1474,11 @@ describe('VercelModel', () => {
 
         const lastUser = [...callArgs().prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
-        expect(lastUser.content[0]?.providerOptions?.bedrock?.cachePoint).toEqual({ type: 'default', ttl: '1h' })
-        expect(lastUser.content[1]?.providerOptions?.bedrock?.cachePoint).toBeUndefined()
+        expect(lastUser.content[0]?.providerOptions?.['bedrock']?.['cachePoint']).toEqual({
+          type: 'default',
+          ttl: '1h',
+        })
+        expect(lastUser.content[1]?.providerOptions?.['bedrock']?.['cachePoint']).toBeUndefined()
       })
 
       it('disables caching and warns once on an unknown strategy', async () => {
@@ -1492,8 +1505,11 @@ describe('VercelModel', () => {
 
         const lastUser = [...callArgs().prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
-        expect(lastUser.content[0]?.providerOptions?.bedrock?.cachePoint).toBeUndefined()
-        expect(lastUser.content[1]?.providerOptions?.bedrock?.cachePoint).toEqual({ type: 'default', ttl: '1h' })
+        expect(lastUser.content[0]?.providerOptions?.['bedrock']?.['cachePoint']).toBeUndefined()
+        expect(lastUser.content[1]?.providerOptions?.['bedrock']?.['cachePoint']).toEqual({
+          type: 'default',
+          ttl: '1h',
+        })
       })
 
       it('places the cache point on a trailing pdf document, which bedrock accepts', async () => {
@@ -1514,8 +1530,8 @@ describe('VercelModel', () => {
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
         const textPart = lastUser.content.find((part) => part.type === 'text')
         const documentPart = lastUser.content.find((part) => part.type === 'file')
-        expect(textPart?.providerOptions?.bedrock?.cachePoint).toBeUndefined()
-        expect(documentPart?.providerOptions?.bedrock?.cachePoint).toEqual({ type: 'default', ttl: '1h' })
+        expect(textPart?.providerOptions?.['bedrock']?.['cachePoint']).toBeUndefined()
+        expect(documentPart?.providerOptions?.['bedrock']?.['cachePoint']).toEqual({ type: 'default', ttl: '1h' })
       })
 
       it('skips the cache point when every content block is rebuilt each call', async () => {
@@ -1525,7 +1541,9 @@ describe('VercelModel', () => {
 
         const lastUser = [...callArgs().prompt].reverse().find((message) => message.role === 'user')
         if (lastUser?.role !== 'user') throw new Error('expected a user message')
-        expect(lastUser.content.every((part) => part.providerOptions?.bedrock?.cachePoint === undefined)).toBe(true)
+        expect(lastUser.content.every((part) => part.providerOptions?.['bedrock']?.['cachePoint'] === undefined)).toBe(
+          true
+        )
       })
 
       it('under the default auto strategy, skips and warns for a model without caching support', async () => {
@@ -1560,7 +1578,7 @@ describe('VercelModel', () => {
         const args = callArgs()
         expect(toolCacheControl(args)).toBeUndefined()
         expect(messageCacheControl(args)).toBeUndefined()
-        expect(args.providerOptions?.openai).toBeUndefined()
+        expect(args.providerOptions?.['openai']).toBeUndefined()
         expect(warnOnce).toHaveBeenCalledWith(
           expect.objectContaining({ warn: expect.any(Function) }),
           expect.stringContaining('not supported for this vercel provider')

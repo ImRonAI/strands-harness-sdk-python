@@ -28,7 +28,7 @@ describe('Graph invocationState forwarding', () => {
     })
     agentA.addHook(BeforeModelCallEvent, (event) => {
       nodeAObserved.push(event.invocationState)
-      event.invocationState.touchedByA = true
+      event.invocationState['touchedByA'] = true
     })
 
     const agentB = new Agent({
@@ -53,8 +53,8 @@ describe('Graph invocationState forwarding', () => {
     expect(nodeBObserved[0]).toBe(state)
 
     // Node B sees node A's mutation.
-    expect(nodeBObserved[0]?.touchedByA).toBe(true)
-    expect(state.touchedByA).toBe(true)
+    expect(nodeBObserved[0]?.['touchedByA']).toBe(true)
+    expect(state['touchedByA']).toBe(true)
   })
 
   it('defaults invocationState to {} when none is passed', async () => {

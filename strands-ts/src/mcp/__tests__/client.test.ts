@@ -83,7 +83,7 @@ function mockActiveSpan(traceId: string = '1234567890abcdef1234567890abcdef', tr
   vi.spyOn(trace, 'getSpan').mockReturnValue(mockSpan as unknown as ReturnType<typeof trace.getSpan>)
   vi.spyOn(propagation, 'inject').mockImplementation((_context, carrier) => {
     if (carrier && typeof carrier === 'object') {
-      ;(carrier as Record<string, string>).traceparent = `00-${traceId}-1234567890abcdef-01`
+      ;(carrier as Record<string, string>)['traceparent'] = `00-${traceId}-1234567890abcdef-01`
     }
   })
 }

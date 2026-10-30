@@ -187,23 +187,6 @@ export class MockMessageModel extends Model<BaseModelConfig> {
   }
 
   /**
-   * Generates appropriate ModelStreamEvents for a message.
-   */
-  private async *_generateEventsForMessage(message: Message, stopReason: StopReason): AsyncGenerator<ModelStreamEvent> {
-    // Yield message start event
-    yield { type: 'modelMessageStartEvent', role: message.role }
-
-    // Yield events for each content block
-    for (let i = 0; i < message.content.length; i++) {
-      const block = message.content[i]!
-      yield* this._generateEventsForBlock(block)
-    }
-
-    // Yield message stop event
-    yield { type: 'modelMessageStopEvent', stopReason }
-  }
-
-  /**
    * Generates appropriate ModelStreamEvents for a content block.
    */
   private async *_generateEventsForBlock(block: PlainContentBlock): AsyncGenerator<ModelStreamEvent> {

@@ -134,7 +134,7 @@ describe('summarizeContextTool', () => {
     await summarizeContextTool.invoke({ keepRecent: 10, summaryRatio: 0.3 }, makeContext(messages, model))
 
     const hasToolUse = messages.some(
-      (m) => m.content.some((b) => b.type === 'toolUseBlock') && m.metadata?.custom?.pinned
+      (m) => m.content.some((b) => b.type === 'toolUseBlock') && m.metadata?.custom?.['pinned']
     )
     expect(hasToolUse).toBe(true)
   })
@@ -254,9 +254,9 @@ describe('pinContextTool', () => {
       const result = await pinContextTool.invoke({ select: 'last_turn', action: 'pin' as const }, makeContext(messages))
       expect(result).toContain('Pinned')
       expect(result).toContain('2 message(s)')
-      expect(messages[2]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[3]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[0]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[3]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[0]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
 
     it('includes tool calls in the current turn', async () => {
@@ -276,11 +276,11 @@ describe('pinContextTool', () => {
       ]
       const result = await pinContextTool.invoke({ select: 'last_turn', action: 'pin' as const }, makeContext(messages))
       expect(result).toContain('4 message(s)')
-      expect(messages[2]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[3]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[4]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[5]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[0]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[3]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[4]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[5]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[0]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
 
     it('pins with filter on last_turn', async () => {
@@ -295,8 +295,8 @@ describe('pinContextTool', () => {
         makeContext(messages)
       )
       expect(result).toContain('1 message(s)')
-      expect(messages[2]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[3]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[3]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
   })
 
@@ -306,10 +306,10 @@ describe('pinContextTool', () => {
       const result = await pinContextTool.invoke({ select: 3, action: 'pin' as const }, makeContext(messages))
       expect(result).toContain('Pinned')
       expect(result).toContain('3 message(s)')
-      expect(messages[3]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[4]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[5]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[0]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[3]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[4]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[5]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[0]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
 
     it('clamps to conversation length', async () => {
@@ -325,10 +325,10 @@ describe('pinContextTool', () => {
         makeContext(messages)
       )
       expect(result).toContain('3 message(s)')
-      expect(messages[0]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[2]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[4]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[1]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[0]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[4]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[1]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
   })
 
@@ -338,10 +338,10 @@ describe('pinContextTool', () => {
       const result = await pinContextTool.invoke({ select: [0, 2, 4], action: 'pin' as const }, makeContext(messages))
       expect(result).toContain('Pinned')
       expect(result).toContain('3 message(s)')
-      expect(messages[0]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[1]!.metadata?.custom?.pinned).toBeUndefined()
-      expect(messages[2]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[4]!.metadata?.custom?.pinned).toBe(true)
+      expect(messages[0]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[1]!.metadata?.custom?.['pinned']).toBeUndefined()
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[4]!.metadata?.custom?.['pinned']).toBe(true)
     })
 
     it('returns error when all indices out of range', async () => {
@@ -359,7 +359,7 @@ describe('pinContextTool', () => {
       const result = await pinContextTool.invoke({ select: [1, 99], action: 'pin' as const }, makeContext(messages))
       expect(result).toContain('Pinned')
       expect(result).toContain('1 message(s)')
-      expect(messages[1]!.metadata?.custom?.pinned).toBe(true)
+      expect(messages[1]!.metadata?.custom?.['pinned']).toBe(true)
     })
   })
 
@@ -379,10 +379,10 @@ describe('pinContextTool', () => {
         makeContext(messages)
       )
       expect(result).toContain('2 message(s)')
-      expect(messages[1]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[2]!.metadata?.custom?.pinned).toBe(true)
-      expect(messages[0]!.metadata?.custom?.pinned).toBeUndefined()
-      expect(messages[3]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[1]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBe(true)
+      expect(messages[0]!.metadata?.custom?.['pinned']).toBeUndefined()
+      expect(messages[3]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
   })
 
@@ -395,8 +395,8 @@ describe('pinContextTool', () => {
       const result = await pinContextTool.invoke({ select: [1, 2], action: 'unpin' as const }, makeContext(messages))
       expect(result).toContain('Unpinned')
       expect(result).toContain('2 message(s)')
-      expect(messages[1]!.metadata?.custom?.pinned).toBeUndefined()
-      expect(messages[2]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[1]!.metadata?.custom?.['pinned']).toBeUndefined()
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
 
     it('unpins last N messages', async () => {
@@ -405,8 +405,8 @@ describe('pinContextTool', () => {
       pinMessage(messages, 3)
 
       await pinContextTool.invoke({ select: 2, action: 'unpin' as const }, makeContext(messages))
-      expect(messages[2]!.metadata?.custom?.pinned).toBeUndefined()
-      expect(messages[3]!.metadata?.custom?.pinned).toBeUndefined()
+      expect(messages[2]!.metadata?.custom?.['pinned']).toBeUndefined()
+      expect(messages[3]!.metadata?.custom?.['pinned']).toBeUndefined()
     })
   })
 

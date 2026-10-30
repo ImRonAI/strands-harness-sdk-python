@@ -224,15 +224,15 @@ function formatResponsesMessages(messages: Message[]): ResponseInputItem[] {
         // which has already been discarded by this point. Non-text assistant history
         // has no valid input shape either. Replaying verbatim output items is
         // tracked in https://github.com/strands-agents/harness-sdk/issues/3389.
-        const droppedTypes = contentItems.filter((item) => item.type !== 'output_text').map((item) => item.type)
+        const droppedTypes = contentItems.filter((item) => item['type'] !== 'output_text').map((item) => item['type'])
         if (droppedTypes.length > 0) {
           logger.warn(
             `content_type=<${droppedTypes.join(', ')}> | non-text assistant history content has no valid responses api input shape | dropping`
           )
         }
         const text = contentItems
-          .filter((item) => item.type === 'output_text')
-          .map((item) => item.text as string)
+          .filter((item) => item['type'] === 'output_text')
+          .map((item) => item['text'] as string)
           .join('\n')
         if (text) input.push({ role: 'assistant', content: text })
       } else {

@@ -434,8 +434,8 @@ export class Tracer {
       `Tool: ${tool.name}`,
       this._traceState.currentCycle ? { parent: this._traceState.currentCycle } : undefined
     )
-    toolTrace.metadata.toolUseId = tool.toolUseId
-    toolTrace.metadata.toolName = tool.name
+    toolTrace.metadata['toolUseId'] = tool.toolUseId
+    toolTrace.metadata['toolName'] = tool.name
     this._traceState.currentTool = toolTrace
 
     try {
@@ -910,7 +910,7 @@ export class Tracer {
     // Create local cycle trace
     const cycleNumber = this._traceState.traces.length + 1
     this._traceState.currentCycle = new AgentTrace(`Cycle ${cycleNumber}`)
-    this._traceState.currentCycle.metadata.cycleId = cycleId
+    this._traceState.currentCycle.metadata['cycleId'] = cycleId
     this._traceState.traces.push(this._traceState.currentCycle)
 
     try {
@@ -1239,7 +1239,7 @@ export class Tracer {
    * Parse the OTEL_SEMCONV_STABILITY_OPT_IN environment variable.
    */
   private static _parseSemconvOptIn(): Set<string> {
-    const optInEnv = globalThis.process?.env?.OTEL_SEMCONV_STABILITY_OPT_IN ?? ''
+    const optInEnv = globalThis.process?.env?.['OTEL_SEMCONV_STABILITY_OPT_IN'] ?? ''
     return new Set(
       optInEnv
         .split(',')
@@ -1257,10 +1257,10 @@ export class Tracer {
     const env = globalThis.process?.env
     if (!env) return false
 
-    if (env.LANGFUSE_BASE_URL) return true
+    if (env['LANGFUSE_BASE_URL']) return true
 
-    const otlpEndpoint = env.OTEL_EXPORTER_OTLP_ENDPOINT ?? ''
-    const tracesEndpoint = env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ?? ''
+    const otlpEndpoint = env['OTEL_EXPORTER_OTLP_ENDPOINT'] ?? ''
+    const tracesEndpoint = env['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'] ?? ''
     return otlpEndpoint.includes('langfuse') || tracesEndpoint.includes('langfuse')
   }
 

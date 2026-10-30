@@ -50,7 +50,7 @@ async function loadApiKeysFromSecretsManager(): Promise<void> {
    * Validate that required environment variables are set when running in GitHub Actions.
    * This prevents tests from being unintentionally skipped due to missing credentials.
    */
-  if (process.env.GITHUB_ACTIONS !== 'true') {
+  if (process.env['GITHUB_ACTIONS'] !== 'true') {
     console.warn('Tests running outside GitHub Actions, skipping required provider validation')
     return
   }
@@ -72,7 +72,7 @@ export async function setup(project: TestProject): Promise<() => void> {
   await loadApiKeysFromSecretsManager()
   console.log('Global setup: API keys loaded into environment')
 
-  const isCI = !!globalThis.process.env.CI
+  const isCI = !!globalThis.process.env['CI']
 
   project.provide('isBrowser', project.isBrowserEnabled())
   project.provide('isCI', isCI)
@@ -95,7 +95,7 @@ export async function setup(project: TestProject): Promise<() => void> {
 }
 
 async function getOpenAITestContext(isCI: boolean): Promise<ProvidedContext['provider-openai']> {
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = process.env['OPENAI_API_KEY']
   const shouldSkip = !apiKey
 
   if (shouldSkip) {
@@ -114,7 +114,7 @@ async function getOpenAITestContext(isCI: boolean): Promise<ProvidedContext['pro
 }
 
 async function getAnthropicTestContext(isCI: boolean): Promise<ProvidedContext['provider-anthropic']> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env['ANTHROPIC_API_KEY']
   const shouldSkip = !apiKey
 
   if (shouldSkip) {
@@ -190,7 +190,7 @@ async function getBedrockKnowledgeBaseTestContext(): Promise<ProvidedContext['pr
 }
 
 async function getGeminiTestContext(_isCI: boolean): Promise<ProvidedContext['provider-gemini']> {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env['GEMINI_API_KEY']
   const shouldSkip = !apiKey
 
   if (shouldSkip) {

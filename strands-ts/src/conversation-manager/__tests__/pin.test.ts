@@ -49,7 +49,7 @@ describe('pinMessage', () => {
     const messages = [makeMessage('important', { custom: { myField: 'value' } })]
     pinMessage(messages, 0)
 
-    expect(messages[0]!.metadata?.custom?.myField).toBe('value')
+    expect(messages[0]!.metadata?.custom?.['myField']).toBe('value')
     expect(isPinned(messages, 0)).toBe(true)
   })
 })
@@ -68,7 +68,7 @@ describe('unpinMessage', () => {
     unpinMessage(messages, 0)
 
     expect(isPinned(messages, 0)).toBe(false)
-    expect(messages[0]!.metadata?.custom?.other).toBe('keep')
+    expect(messages[0]!.metadata?.custom?.['other']).toBe('keep')
   })
 
   it('removes metadata entirely when nothing remains', () => {

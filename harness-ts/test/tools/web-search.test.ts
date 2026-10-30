@@ -85,7 +85,7 @@ describe('exaBackend', () => {
     vi.stubEnv('EXA_API_KEY', 'sk-env')
     let client = mockMcpClient({ content: [] })
     expect(await exaBackend()('q', 1)).toEqual([])
-    expect(client.config.headers).toEqual({ 'x-api-key': 'sk-env' })
+    expect(client.config['headers']).toEqual({ 'x-api-key': 'sk-env' })
 
     vi.stubEnv('EXA_API_KEY', '')
     client = mockMcpClient({ content: null })
@@ -102,7 +102,7 @@ describe('exaBackend', () => {
     vi.stubEnv('EXA_API_KEY', 'sk-later')
     client = mockMcpClient({ content: [] })
     await invoke(exaWebSearch, { query: 'q' })
-    expect(client.config.headers).toEqual({ 'x-api-key': 'sk-later' })
+    expect(client.config['headers']).toEqual({ 'x-api-key': 'sk-later' })
     expect(exaWebSearch.name).toBe('web_search')
     expect(makeExaWebSearch().name).toBe('web_search')
   })

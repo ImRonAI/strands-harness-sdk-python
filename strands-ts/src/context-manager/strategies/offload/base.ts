@@ -236,7 +236,7 @@ export function repairAlternation(messages: Message[]): void {
     const current = messages[readIndex]!
     if (writeIndex > 0 && messages[writeIndex - 1]!.role === current.role) {
       const prev = messages[writeIndex - 1]!
-      const pinned = prev.metadata?.custom?.pinned === true || current.metadata?.custom?.pinned === true
+      const pinned = prev.metadata?.custom?.['pinned'] === true || current.metadata?.custom?.['pinned'] === true
       messages[writeIndex - 1] = new Message({
         role: prev.role,
         content: [...prev.content, ...current.content],
@@ -417,7 +417,7 @@ export abstract class BaseOffloadStrategy implements ContextStrategy {
   /** Process eligible blocks in a message. */
   protected async _transformBlocks(
     message: Message,
-    messages: Message[],
+    _messages: Message[],
     toolNameMap: Map<string, string>,
     agent: LocalAgent
   ): Promise<boolean> {

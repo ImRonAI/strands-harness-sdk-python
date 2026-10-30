@@ -12,7 +12,8 @@ import { createHarness, type HarnessAgentOptions } from '../../src/agent.js'
 
 // A small, fast model keeps these cheap; override with STRANDS_INTEG_MODEL. Thinking is off because the
 // Haiku default rejects the reasoning-effort field and it isn't needed for these checks.
-export const INTEG_MODEL = process.env.STRANDS_INTEG_MODEL ?? 'bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0'
+export const INTEG_MODEL =
+  process.env['STRANDS_INTEG_MODEL'] ?? 'bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0'
 
 /**
  * A real, integ-configured agent: the small model, thinking off, plugins disabled, and sessions off
@@ -43,8 +44,9 @@ export function toolSucceeded(agent: Agent, name: string): boolean {
   const messages = (agent as unknown as { messages: Array<{ content: Array<Record<string, any>> }> }).messages ?? []
   for (const message of messages) {
     for (const block of message.content ?? []) {
-      const use = block.toolUse ?? (typeof block.name === 'string' && block.toolUseId ? block : undefined)
-      const result = block.toolResult ?? (typeof block.status === 'string' && block.toolUseId ? block : undefined)
+      const use = block['toolUse'] ?? (typeof block['name'] === 'string' && block['toolUseId'] ? block : undefined)
+      const result =
+        block['toolResult'] ?? (typeof block['status'] === 'string' && block['toolUseId'] ? block : undefined)
       if (use && use.name === name) {
         used.add(use.toolUseId as string)
       }
@@ -65,7 +67,7 @@ export function toolAttempted(agent: Agent, name: string): boolean {
   const messages = (agent as unknown as { messages: Array<{ content: Array<Record<string, any>> }> }).messages ?? []
   for (const message of messages) {
     for (const block of message.content ?? []) {
-      const use = block.toolUse ?? (typeof block.name === 'string' && block.toolUseId ? block : undefined)
+      const use = block['toolUse'] ?? (typeof block['name'] === 'string' && block['toolUseId'] ? block : undefined)
       if (use && use.name === name) {
         return true
       }
@@ -84,7 +86,7 @@ export function toolResultContains(agent: Agent, name: string, needle: string): 
   const ids = new Set<string>()
   for (const message of messages) {
     for (const block of message.content ?? []) {
-      const use = block.toolUse ?? (typeof block.name === 'string' && block.toolUseId ? block : undefined)
+      const use = block['toolUse'] ?? (typeof block['name'] === 'string' && block['toolUseId'] ? block : undefined)
       if (use && use.name === name) {
         ids.add(use.toolUseId as string)
       }
@@ -92,7 +94,8 @@ export function toolResultContains(agent: Agent, name: string, needle: string): 
   }
   for (const message of messages) {
     for (const block of message.content ?? []) {
-      const result = block.toolResult ?? (typeof block.status === 'string' && block.toolUseId ? block : undefined)
+      const result =
+        block['toolResult'] ?? (typeof block['status'] === 'string' && block['toolUseId'] ? block : undefined)
       if (result && ids.has(result.toolUseId as string) && JSON.stringify(result.content ?? result).includes(needle)) {
         return true
       }

@@ -97,7 +97,7 @@ describe('setupTracer (node-specific)', () => {
 
   describe('resource attributes from environment', () => {
     it('should use OTEL_SERVICE_NAME when set', async () => {
-      process.env.OTEL_SERVICE_NAME = 'my-custom-service'
+      process.env['OTEL_SERVICE_NAME'] = 'my-custom-service'
       const telemetry = await import('../index.js')
 
       const provider = telemetry.setupTracer()
@@ -106,7 +106,7 @@ describe('setupTracer (node-specific)', () => {
     })
 
     it('should use OTEL_SERVICE_NAMESPACE when set', async () => {
-      process.env.OTEL_SERVICE_NAMESPACE = 'my-namespace'
+      process.env['OTEL_SERVICE_NAMESPACE'] = 'my-namespace'
       const telemetry = await import('../index.js')
 
       const provider = telemetry.setupTracer()
@@ -115,7 +115,7 @@ describe('setupTracer (node-specific)', () => {
     })
 
     it('should use OTEL_DEPLOYMENT_ENVIRONMENT when set', async () => {
-      process.env.OTEL_DEPLOYMENT_ENVIRONMENT = 'production'
+      process.env['OTEL_DEPLOYMENT_ENVIRONMENT'] = 'production'
       const telemetry = await import('../index.js')
 
       const provider = telemetry.setupTracer()
@@ -124,7 +124,7 @@ describe('setupTracer (node-specific)', () => {
     })
 
     it('should merge OTEL_RESOURCE_ATTRIBUTES with defaults', async () => {
-      process.env.OTEL_RESOURCE_ATTRIBUTES = 'service.version=1.0.0,custom.team=platform'
+      process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.version=1.0.0,custom.team=platform'
       const telemetry = await import('../index.js')
 
       const provider = telemetry.setupTracer()
@@ -135,7 +135,7 @@ describe('setupTracer (node-specific)', () => {
     })
 
     it('should allow OTEL_RESOURCE_ATTRIBUTES to override defaults', async () => {
-      process.env.OTEL_RESOURCE_ATTRIBUTES = 'service.name=custom-service,deployment.environment=production'
+      process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.name=custom-service,deployment.environment=production'
       const telemetry = await import('../index.js')
 
       const provider = telemetry.setupTracer()
@@ -160,7 +160,7 @@ describe('setupMeter (node-specific)', () => {
 
   describe('resource attributes from environment', () => {
     it('should use OTEL_SERVICE_NAME when set', async () => {
-      process.env.OTEL_SERVICE_NAME = 'my-meter-service'
+      process.env['OTEL_SERVICE_NAME'] = 'my-meter-service'
       const { MeterProvider, InMemoryMetricExporter, PeriodicExportingMetricReader, AggregationTemporality } =
         await import('@opentelemetry/sdk-metrics')
       const { resourceFromAttributes } = await import('@opentelemetry/resources')

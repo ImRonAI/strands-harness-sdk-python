@@ -104,7 +104,7 @@ export class OpenAIModel extends Model<OpenAIModelConfig> {
       this._client = buildMantleClient(bedrockMantleConfig, apiKey, clientConfig, modelId)
     } else {
       const hasEnvKey =
-        typeof process !== 'undefined' && typeof process.env !== 'undefined' && process.env.OPENAI_API_KEY
+        typeof process !== 'undefined' && typeof process.env !== 'undefined' && process.env['OPENAI_API_KEY']
       if (!apiKey && !hasEnvKey) {
         throw new Error(
           "OpenAI API key is required. Provide it via the 'apiKey' option (string or function) or set the OPENAI_API_KEY environment variable."

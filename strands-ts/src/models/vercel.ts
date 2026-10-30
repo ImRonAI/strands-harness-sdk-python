@@ -457,7 +457,7 @@ function setAnthropicCacheControl(target: { providerOptions?: SharedV3ProviderOp
   target.providerOptions = {
     ...target.providerOptions,
     anthropic: {
-      ...target.providerOptions?.anthropic,
+      ...target.providerOptions?.['anthropic'],
       cacheControl: ttl ? { type: 'ephemeral', ttl } : { type: 'ephemeral' },
     },
   }
@@ -473,7 +473,7 @@ function setBedrockCachePoint(target: { providerOptions?: SharedV3ProviderOption
   target.providerOptions = {
     ...target.providerOptions,
     bedrock: {
-      ...target.providerOptions?.bedrock,
+      ...target.providerOptions?.['bedrock'],
       cachePoint: ttl ? { type: 'default', ttl } : { type: 'default' },
     },
   }
@@ -488,17 +488,17 @@ function setBedrockCachePoint(target: { providerOptions?: SharedV3ProviderOption
  * @internal
  */
 function applyOpenAICache(callOptions: LanguageModelV3CallOptions, cacheConfig: CacheConfig): void {
-  const openai: JSONObject = { ...callOptions.providerOptions?.openai }
+  const openai: JSONObject = { ...callOptions.providerOptions?.['openai'] }
   const openaiCache = resolveOpenAICache(cacheConfig)
 
-  if (openaiCache.cacheKey !== undefined && openai.promptCacheKey === undefined) {
-    openai.promptCacheKey = openaiCache.cacheKey
+  if (openaiCache.cacheKey !== undefined && openai['promptCacheKey'] === undefined) {
+    openai['promptCacheKey'] = openaiCache.cacheKey
   }
 
   // Leave an explicit promptCacheRetention untouched; otherwise map a retention ttl or, if it names
   // no retention literal, warn that it was ignored.
-  if (openai.promptCacheRetention === undefined) {
-    if (openaiCache.retention !== undefined) openai.promptCacheRetention = openaiCache.retention
+  if (openai['promptCacheRetention'] === undefined) {
+    if (openaiCache.retention !== undefined) openai['promptCacheRetention'] = openaiCache.retention
     else if (cacheConfig.ttl !== undefined) warnUnsupportedRetention(cacheConfig.ttl)
   }
 

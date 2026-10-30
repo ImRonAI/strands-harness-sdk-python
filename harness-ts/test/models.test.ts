@@ -1,6 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, assert, describe, expect, it, vi } from 'vitest'
 import { Model, ModelRouter } from '@strands-agents/sdk'
 import { BedrockModel } from '@strands-agents/sdk/models/bedrock'
+import { AnthropicModel } from '@strands-agents/sdk/models/anthropic'
+import { GoogleModel } from '@strands-agents/sdk/models/google'
+import { OpenAIModel } from '@strands-agents/sdk/models/openai'
 
 import {
   resolveModel,
@@ -34,7 +37,9 @@ describe('resolveModel', () => {
   it.each(['anthropic.claude-3-haiku-20240307-v1:0', 'us.anthropic.claude-3-haiku-20240307-v1:0'])(
     'does not send automatic cache points to %s',
     async (id) => {
-      expect((await resolve(`bedrock/${id}`, 'auto', false, true)).getConfig().cacheConfig).toBeUndefined()
+      const model = await resolve(`bedrock/${id}`, 'auto', false, true)
+      assert.instanceOf(model, BedrockModel)
+      expect(model.getConfig().cacheConfig).toBeUndefined()
       await expect(resolve(`bedrock/${id}`, 'auto', false, true, true)).rejects.toThrow(
         'does not support prompt caching'
       )
@@ -55,7 +60,7 @@ describe('resolveModel', () => {
   })
   it('resolves undefined to the default with thinking', async () => {
     const model = await resolve(undefined)
-    expect(model).toBeInstanceOf(BedrockModel)
+    assert.instanceOf(model, BedrockModel)
     const config = model.getConfig()
     expect(config.modelId).toBe('global.anthropic.claude-opus-4-8')
     expect(config.additionalRequestFields).toEqual({
@@ -92,21 +97,25 @@ describe('resolveModel', () => {
 
   it('enables prompt caching for Bedrock when requested', async () => {
     const model = await resolve('bedrock/global.anthropic.claude-opus-4-8', 'auto', false, true)
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().cacheConfig).toEqual({ strategy: 'auto' })
   })
 
   it('enables Bedrock caching even with effort off', async () => {
     const model = await resolve('bedrock/global.anthropic.claude-opus-4-8', 'off', false, true)
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().cacheConfig).toEqual({ strategy: 'auto' })
   })
 
   it('does not set cacheConfig when caching is off', async () => {
     const model = await resolve('bedrock/global.anthropic.claude-opus-4-8', 'auto', false, false)
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().cacheConfig).toBeUndefined()
   })
 
   it('leaves provider defaults when effort is off', async () => {
     const model = await resolve('bedrock/global.anthropic.claude-opus-4-8', 'off')
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toBeUndefined()
   })
 
@@ -118,18 +127,21 @@ describe('resolveModel', () => {
 
   it('applies an explicit thinking level', async () => {
     const model = await resolve('bedrock/global.anthropic.claude-opus-4-8', 'low')
+    assert.instanceOf(model, BedrockModel)
     const fields = model.getConfig().additionalRequestFields as { output_config: { effort: string } }
     expect(fields.output_config.effort).toBe('low')
   })
 
   it('accepts a provider-specific level', async () => {
     const model = await resolve('bedrock/global.anthropic.claude-opus-4-8', 'max')
+    assert.instanceOf(model, BedrockModel)
     const fields = model.getConfig().additionalRequestFields as { output_config: { effort: string } }
     expect(fields.output_config.effort).toBe('max')
   })
 
   it('maps OpenAI-on-Bedrock thinking to reasoning effort', async () => {
     const model = await resolve('bedrock/us.openai.gpt-5.6-luna', 'max')
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual({
       reasoning: { effort: 'max' },
     })
@@ -137,6 +149,7 @@ describe('resolveModel', () => {
 
   it('uses the GPT-OSS Bedrock reasoning field and levels', async () => {
     const model = await resolve('bedrock/openai.gpt-oss-120b-1:0', 'medium')
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual({
       reasoning_effort: 'medium',
     })
@@ -154,9 +167,12 @@ describe('resolveModel', () => {
         ['max', 'max'],
       ] as const) {
         const model = await resolve(`bedrock/${modelId}`, thinking)
+        assert.instanceOf(model, BedrockModel)
         expect(model.getConfig().additionalRequestFields).toEqual({ reasoning: { effort } })
       }
-      expect((await resolve(`bedrock/${modelId}`, 'off')).getConfig().additionalRequestFields).toEqual({
+      const off = await resolve(`bedrock/${modelId}`, 'off')
+      assert.instanceOf(off, BedrockModel)
+      expect(off.getConfig().additionalRequestFields).toEqual({
         reasoning: { effort: 'none' },
       })
       await expect(resolve(`bedrock/${modelId}`, 'minimal')).rejects.toThrow(
@@ -167,24 +183,30 @@ describe('resolveModel', () => {
 
   it('uses the Qwen Bedrock reasoning field and levels', async () => {
     const model = await resolve('bedrock/qwen.qwen3-32b-v1:0', 'minimal')
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual({
       reasoning_effort: 'minimal',
     })
     const regional = await resolve('bedrock/us.qwen.qwen3-32b-v1:0', 'high')
+    assert.instanceOf(regional, BedrockModel)
     expect(regional.getConfig().additionalRequestFields).toEqual({
       reasoning_effort: 'high',
     })
-    expect((await resolve('bedrock/qwen.qwen3-32b-v1:0', 'off')).getConfig().additionalRequestFields).toEqual({
+    const off = await resolve('bedrock/qwen.qwen3-32b-v1:0', 'off')
+    assert.instanceOf(off, BedrockModel)
+    expect(off.getConfig().additionalRequestFields).toEqual({
       reasoning_effort: 'none',
     })
   })
 
   it('uses the xAI Grok Bedrock reasoning field and levels', async () => {
     const model = await resolve('bedrock/us.xai.grok-4.6', 'xhigh')
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual({
       reasoning_effort: 'xhigh',
     })
     const automatic = await resolve('bedrock/us.xai.grok-4.6', 'auto')
+    assert.instanceOf(automatic, BedrockModel)
     expect(automatic.getConfig().additionalRequestFields).toEqual({
       reasoning_effort: 'high',
     })
@@ -195,6 +217,7 @@ describe('resolveModel', () => {
 
   it('does not attach Claude thinking fields to an unknown Bedrock family', async () => {
     const model = await resolve('bedrock/amazon.nova-pro-v1:0')
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toBeUndefined()
   })
 
@@ -223,7 +246,7 @@ describe('resolveModel', () => {
 
   it('maps google auto to the high thinking level', async () => {
     const model = await resolve('google/gemini-3.5-flash')
-    expect(model).toBeInstanceOf(Model)
+    assert.instanceOf(model, GoogleModel)
     const params = model.getConfig().params as { thinkingConfig: { thinkingLevel: string } }
     expect(params.thinkingConfig.thinkingLevel).toBe('high')
   })
@@ -235,13 +258,14 @@ describe('resolveModel', () => {
 
   it('maps openai to reasoning effort', async () => {
     const model = await resolve('openai/gpt-5.6-sol')
-    expect(model).toBeInstanceOf(Model)
+    assert.instanceOf(model, OpenAIModel)
     const params = model.getConfig().params as { reasoning: { effort: string } }
     expect(params.reasoning.effort).toBe('high')
   })
 
   it('maps anthropic to thinking and max tokens', async () => {
     const model = await resolve('anthropic/claude-opus-4-8')
+    assert.instanceOf(model, AnthropicModel)
     const config = model.getConfig()
     expect(config.modelId).toBe('claude-opus-4-8')
     expect(config.maxTokens).toBe(128_000)
@@ -309,11 +333,13 @@ describe('resolveModel', () => {
 
   it.each(NO_THINKING_CLAUDE)('sends no thinking block to %s', async (modelId) => {
     const model = await resolve(`bedrock/${modelId}`)
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toBeUndefined()
   })
 
   it.each(EXTENDED_CLAUDE)('sends the extended block to %s', async (modelId) => {
     const model = await resolve(`bedrock/${modelId}`)
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual(EXTENDED)
   })
 
@@ -324,7 +350,9 @@ describe('resolveModel', () => {
     ['xhigh', 32_768],
     ['max', 49_152],
   ] as const)('maps %s to a budget of %d that the api accepts', async (level, budget) => {
-    const config = (await resolve('bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0', level)).getConfig()
+    const model = await resolve('bedrock/global.anthropic.claude-haiku-4-5-20251001-v1:0', level)
+    assert.instanceOf(model, BedrockModel)
+    const config = model.getConfig()
     expect(config.additionalRequestFields).toEqual({ thinking: { type: 'enabled', budget_tokens: budget } })
     expect(budget).toBeLessThan(config.maxTokens!)
   })
@@ -346,17 +374,20 @@ describe('resolveModel', () => {
 
   it.each(['claude-haiku-latest', 'claude-haiku'])('falls open to extended, not adaptive, for %s', async (modelId) => {
     const model = await resolve(`bedrock/global.anthropic.${modelId}`)
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual(EXTENDED)
   })
 
   it('clamps the budget below a small max tokens', async () => {
     const model = await resolve('anthropic/claude-haiku', 'max')
+    assert.instanceOf(model, AnthropicModel)
     expect(model.getConfig().maxTokens).toBe(32_000)
     expect(model.getConfig().params).toEqual({ thinking: { type: 'enabled', budget_tokens: 31_999 } })
   })
 
   it.each(ADAPTIVE_CLAUDE)('sends the adaptive block to %s', async (modelId) => {
     const model = await resolve(`bedrock/${modelId}`)
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual(ADAPTIVE)
   })
 
@@ -368,11 +399,13 @@ describe('resolveModel', () => {
 
   it('sends extended thinking params to an anthropic-direct haiku model', async () => {
     const model = await resolve('anthropic/claude-haiku-4-5-20251001')
+    assert.instanceOf(model, AnthropicModel)
     expect(model.getConfig().params).toEqual(EXTENDED)
   })
 
   it('sends no thinking params to an anthropic-direct claude below the floor', async () => {
     const model = await resolve('anthropic/claude-3-haiku-20240307')
+    assert.instanceOf(model, AnthropicModel)
     expect(model.getConfig().params).toBeUndefined()
   })
 
@@ -397,7 +430,6 @@ describe('resolveModel', () => {
   })
 
   it('builds bedrock-mantle via the OpenAI provider', async () => {
-    const { OpenAIModel } = await import('@strands-agents/sdk/models/openai')
     const model = await resolve('bedrock-mantle/openai.gpt-oss-120b')
     expect(model).toBeInstanceOf(OpenAIModel)
     const config = model.getConfig() as { modelId: string; params: { reasoning: { effort: string } } }
@@ -411,6 +443,7 @@ describe('resolveModel', () => {
 
   it('adds the Bedrock Web Search tool for bedrock-mantle web_search', async () => {
     const model = await resolve('bedrock-mantle/openai.gpt-5.6-luna', 'auto', true)
+    assert.instanceOf(model, OpenAIModel)
     const params = model.getConfig().params as { reasoning: { effort: string }; tools: unknown }
     expect(params.reasoning.effort).toBe('high')
     expect(params.tools).toEqual([{ type: 'web_search', external_web_access: true }])
@@ -418,6 +451,7 @@ describe('resolveModel', () => {
 
   it('adds the Bedrock Web Search tool with effort off', async () => {
     const model = await resolve('bedrock-mantle/openai.gpt-5.6-luna', 'off', true)
+    assert.instanceOf(model, OpenAIModel)
     expect(model.getConfig().params).toEqual({
       reasoning: { effort: 'none' },
       tools: [{ type: 'web_search', external_web_access: true }],
@@ -426,6 +460,7 @@ describe('resolveModel', () => {
 
   it('adds the Bedrock Web Search tool on GPT-6', async () => {
     const model = await resolve('bedrock-mantle/openai.gpt-6-astra', 'off', true)
+    assert.instanceOf(model, OpenAIModel)
     expect(model.getConfig().params).toEqual({
       reasoning: { effort: 'none' },
       tools: [{ type: 'web_search', external_web_access: true }],
@@ -434,12 +469,14 @@ describe('resolveModel', () => {
 
   it('omits bedrock-mantle tools when web_search is off', async () => {
     const model = await resolve('bedrock-mantle/openai.gpt-5.6-luna', 'auto', false)
+    assert.instanceOf(model, OpenAIModel)
     const params = model.getConfig().params as { tools?: unknown }
     expect(params.tools).toBeUndefined()
   })
 
   it('adds the openai web_search tool alongside reasoning', async () => {
     const model = await resolve('openai/gpt-5.6-sol', 'high', true)
+    assert.instanceOf(model, OpenAIModel)
     const params = model.getConfig().params as { reasoning: { effort: string }; tools: unknown }
     expect(params.reasoning.effort).toBe('high')
     expect(params.tools).toEqual([{ type: 'web_search' }])
@@ -447,6 +484,7 @@ describe('resolveModel', () => {
 
   it('adds the openai web_search tool with effort off', async () => {
     const model = await resolve('openai/gpt-5.6-sol', 'off', true)
+    assert.instanceOf(model, OpenAIModel)
     const params = model.getConfig().params as { tools: unknown; reasoning?: unknown }
     expect(params.tools).toEqual([{ type: 'web_search' }])
     expect(params.reasoning).toEqual({ effort: 'none' })
@@ -454,24 +492,29 @@ describe('resolveModel', () => {
 
   it('omits openai tools when web_search is off', async () => {
     const model = await resolve('openai/gpt-5.6-sol', 'high', false)
+    assert.instanceOf(model, OpenAIModel)
     const params = model.getConfig().params as { tools?: unknown }
     expect(params.tools).toBeUndefined()
   })
 
   it('adds the google googleSearch built-in tool for web_search', async () => {
     const model = await resolve('google/gemini-3.5-flash', 'medium', true)
+    assert.instanceOf(model, GoogleModel)
     expect(model.getConfig().builtInTools).toEqual([{ googleSearch: {} }])
   })
 
   it('omits google built-in tools when web_search is off', async () => {
     const model = await resolve('google/gemini-3.5-flash', 'medium', false)
+    assert.instanceOf(model, GoogleModel)
     expect(model.getConfig().builtInTools).toBeUndefined()
   })
 
   it('never adds a native search tool where the model has none', async () => {
     // The factory only passes web_search for models that have it; the builders never add the tool elsewhere.
     for (const id of ['bedrock-mantle/qwen.qwen3-32b-v1:0', 'bedrock-mantle/openai.gpt-oss-120b-1:0']) {
-      expect((await resolve(id, 'high', true)).getConfig().params).not.toHaveProperty('tools')
+      const model = await resolve(id, 'high', true)
+      assert.instanceOf(model, OpenAIModel)
+      expect(model.getConfig().params).not.toHaveProperty('tools')
     }
     expect((await resolve('anthropic/claude-opus-4-8', 'high', true)).getConfig()).not.toHaveProperty('anthropicTools')
   })
@@ -494,11 +537,13 @@ describe('resolveModel', () => {
 
   it('enables prompt caching for anthropic direct when requested', async () => {
     const model = await resolve('anthropic/claude-opus-4-8', 'auto', false, true)
+    assert.instanceOf(model, AnthropicModel)
     expect(model.getConfig().cacheConfig).toEqual({ strategy: 'auto' })
   })
 
   it('does not set cacheConfig for anthropic direct when caching is off', async () => {
     const model = await resolve('anthropic/claude-opus-4-8', 'auto', false, false)
+    assert.instanceOf(model, AnthropicModel)
     expect(model.getConfig().cacheConfig).toBeUndefined()
   })
 
@@ -535,6 +580,7 @@ describe('resolveModel', () => {
 
   it('builds litellm with explicit caching and sets no cacheConfig', async () => {
     const model = await resolve('litellm/gpt-4o', 'auto', false, true, true)
+    assert.instanceOf(model, OpenAIModel)
     expect(model.getConfig().cacheConfig).toBeUndefined()
   })
 })
@@ -569,8 +615,8 @@ describe('default effort', () => {
     'is the high budget on extended-thinking %s',
     async (spec) => {
       const config = (await resolve(spec, DEFAULT_EFFORT)).getConfig()
-      const block = spec.startsWith('bedrock/') ? config.additionalRequestFields : config.params
-      expect(block).toEqual({ thinking: { type: 'enabled', budget_tokens: 16_384 } })
+      const field = spec.startsWith('bedrock/') ? 'additionalRequestFields' : 'params'
+      expect(config).toHaveProperty(field, { thinking: { type: 'enabled', budget_tokens: 16_384 } })
       expect(config).toEqual((await resolve(spec, 'high')).getConfig())
     }
   )
@@ -627,6 +673,7 @@ describe('supportsThinking', () => {
     const modelId = `bedrock/${prefix}anthropic.claude-opus-4-8`
     expect(supportsThinking(modelId)).toBe(true)
     const model = await resolve(modelId, 'max')
+    assert.instanceOf(model, BedrockModel)
     expect(model.getConfig().additionalRequestFields).toEqual({
       thinking: { type: 'adaptive', display: 'summarized' },
       output_config: { effort: 'max' },
@@ -648,6 +695,7 @@ describe('supportsThinking', () => {
     async (modelId) => {
       expect(supportsThinking(`bedrock/global.anthropic.${modelId}`)).toBe(true)
       const model = await resolve(`bedrock/global.anthropic.${modelId}`)
+      assert.instanceOf(model, BedrockModel)
       expect(model.getConfig().additionalRequestFields).toEqual({
         thinking: { type: 'adaptive', display: 'summarized' },
         output_config: { effort: 'high' },
@@ -692,7 +740,7 @@ describe('supportsWebSearch', () => {
 describe('resolveWebFetchModel', () => {
   it('defaults to the provider small model with no thinking', async () => {
     const model = await resolveWebFetchModel('bedrock/global.anthropic.claude-opus-4-8', undefined)
-    expect(model).toBeInstanceOf(BedrockModel)
+    assert.instanceOf(model, BedrockModel)
     const config = model.getConfig()
     expect(config.modelId).toBe('global.anthropic.claude-haiku-4-5-20251001-v1:0')
     expect(config.additionalRequestFields).toBeUndefined()
@@ -805,18 +853,18 @@ describe('supportsMedia', () => {
 
 describe('web_fetch summarizer on a repointed endpoint', () => {
   afterEach(() => {
-    delete process.env.ANTHROPIC_BASE_URL
-    delete process.env.OPENAI_BASE_URL
+    delete process.env['ANTHROPIC_BASE_URL']
+    delete process.env['OPENAI_BASE_URL']
   })
 
   it('reuses the main model when ANTHROPIC_BASE_URL is set', async () => {
-    process.env.ANTHROPIC_BASE_URL = 'https://bedrock-mantle.us-east-1.api.aws/anthropic/v1'
+    process.env['ANTHROPIC_BASE_URL'] = 'https://bedrock-mantle.us-east-1.api.aws/anthropic/v1'
     const model = await resolveWebFetchModel('anthropic/anthropic.claude-fable-5', undefined)
     expect(model.getConfig().modelId).toBe('anthropic.claude-fable-5')
   })
 
   it('reuses the main model when OPENAI_BASE_URL is set', async () => {
-    process.env.OPENAI_BASE_URL = 'https://bedrock-mantle.us-west-2.api.aws/v1'
+    process.env['OPENAI_BASE_URL'] = 'https://bedrock-mantle.us-west-2.api.aws/v1'
     const model = await resolveWebFetchModel('openai/gpt-oss-20b', undefined)
     expect(model.getConfig().modelId).toBe('gpt-oss-20b')
   })
@@ -827,7 +875,7 @@ describe('web_fetch summarizer on a repointed endpoint', () => {
   })
 
   it('does not affect bedrock', async () => {
-    process.env.ANTHROPIC_BASE_URL = 'https://example.invalid/anthropic'
+    process.env['ANTHROPIC_BASE_URL'] = 'https://example.invalid/anthropic'
     const model = await resolveWebFetchModel('bedrock/global.anthropic.claude-opus-4-8', undefined)
     expect(model.getConfig().modelId).toBe('global.anthropic.claude-haiku-4-5-20251001-v1:0')
   })

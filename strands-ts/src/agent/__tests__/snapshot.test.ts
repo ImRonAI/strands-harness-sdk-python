@@ -129,8 +129,8 @@ describe('Snapshot API', () => {
 
       const snapshot = takeSnapshot(agent, { preset: 'session', exclude: ['messages'] })
 
-      expect(snapshot.data.messages).toBeUndefined()
-      expect(snapshot.data.state).toBeDefined()
+      expect(snapshot.data['messages']).toBeUndefined()
+      expect(snapshot.data['state']).toBeDefined()
     })
   })
 
@@ -419,7 +419,7 @@ describe('Snapshot API', () => {
 
       // Snapshot the interrupted agent
       const snapshot = takeSnapshot(agent, { preset: 'session' })
-      expect(snapshot.data.interrupts).toBeDefined()
+      expect(snapshot.data['interrupts']).toBeDefined()
 
       // Create a fresh agent and restore from snapshot
       const model2 = new MockMessageModel().addTurn({ type: 'textBlock', text: 'Done' })
