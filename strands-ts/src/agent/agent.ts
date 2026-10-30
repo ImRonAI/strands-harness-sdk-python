@@ -102,6 +102,7 @@ import type { MemoryManagerConfig } from '../memory/index.js'
 import { SessionManager } from '../session/session-manager.js'
 import { Tracer } from '../telemetry/tracer.js'
 import { AgentMetrics, Meter } from '../telemetry/meter.js'
+import { context as otelContext, propagation } from '@opentelemetry/api'
 import type { AttributeValue } from '@opentelemetry/api'
 import { logger } from '../logging/logger.js'
 import { CancelledError, CheckpointError } from '../errors.js'
@@ -179,6 +180,16 @@ export type AgentConfig = {
    * ```
    */
   model?: Model<BaseModelConfig> | ModelRouter | string
+  /**
+   * Model for the auxiliary side calls the SDK makes outside the main agent loop: context
+   * summarization, memory extraction, the HITL risk classifier, LLM steering, the goal judge, and
+   * the `web_fetch` analyst. Defaults to `model`, so leaving it unset changes nothing; set it
+   * (typically to a smaller, cheaper model) to move every side call off the main model at once.
+   * Each side call resolves its model as `component's own model > auxModel > model`.
+   * Accepts a Model or a string representing a Bedrock model ID, like `model`; a ModelRouter is
+   * not accepted because auxiliary calls run outside the agent loop a router attaches to.
+   */
+  auxModel?: Model<BaseModelConfig> | string
   /** An initial set of messages to seed the agent's conversation history. */
   messages?: Message[] | MessageData[]
   /**
@@ -265,6 +276,11 @@ export type AgentConfig = {
    * Telemetry must be enabled globally via telemetry.setupTracer() for these to take effect.
    */
   traceAttributes?: Record<string, AttributeValue>
+  /**
+   * OpenTelemetry baggage entries attached to the context for the whole invocation.
+   * Baggage propagates to downstream services via the W3C `baggage` header.
+   */
+  baggageAttributes?: Record<string, string>
   /**
    * Optional name for the agent. Defaults to "Strands Agent".
    */
@@ -379,6 +395,15 @@ type ToolsExecutionResult = { message: Message; afterToolsEvent: AfterToolsEvent
 /** Model reached by the middleware terminal; empty when the chain short-circuits or fails before reaching it. */
 type InvokedModelRef = { model?: Model }
 
+/** Resolves `auxModel` like `model`: a string is a Bedrock model ID; a ModelRouter is rejected. */
+function resolveAuxModel(auxModel: Model | string | undefined): Model | undefined {
+  if (typeof auxModel === 'string') return new BedrockModel({ modelId: auxModel })
+  if (auxModel instanceof ModelRouter) {
+    throw new Error('auxModel must be a Model or a Bedrock model id, not a ModelRouter')
+  }
+  return auxModel
+}
+
 /**
  * Orchestrates the interaction between a model, a set of tools, and MCP clients.
  * The Agent is responsible for managing the lifecycle of tools and clients
@@ -410,6 +435,7 @@ export class Agent implements LocalAgent, InvokableAgent {
    */
   public model: Model
   private readonly _modelRouter?: ModelRouter
+  private _auxModel: Model | undefined
 
   /**
    * The system prompt to pass to the model provider.
@@ -451,6 +477,11 @@ export class Agent implements LocalAgent, InvokableAgent {
    */
   public readonly storage?: Storage | undefined
 
+  /**
+   * OpenTelemetry baggage entries attached to the context for every invocation.
+   */
+  public readonly baggageAttributes: Readonly<Record<string, string>>
+
   private readonly _sandbox: Sandbox | false | undefined
 
   /**
@@ -461,6 +492,24 @@ export class Agent implements LocalAgent, InvokableAgent {
    */
   get sandbox(): Sandbox {
     return this._sandbox || defaultSandbox.get()
+  }
+
+  /**
+   * Model for auxiliary side calls (summarization, memory extraction, classification, steering,
+   * web fetch). Resolution order: `configured auxModel > model`.
+   *
+   * Reading always yields a resolved {@link Model}. Assigning accepts a Model, a Bedrock model ID
+   * string, or `undefined` to revert to following `model`. Memory extraction resolves its model when
+   * attached to the agent and keeps it; every other side call resolves it at call time.
+   *
+   * @throws Error if assigned a {@link ModelRouter}.
+   */
+  get auxModel(): Model {
+    return this._auxModel ?? this.model
+  }
+
+  set auxModel(auxModel: Model | string | undefined) {
+    this._auxModel = resolveAuxModel(auxModel)
   }
 
   /**
@@ -518,6 +567,7 @@ export class Agent implements LocalAgent, InvokableAgent {
     this.contextManager = ContextManager.from(config?.contextManager)
     this.sessionManager = config?.sessionManager
     this.storage = config?.storage
+    this.baggageAttributes = { ...config?.baggageAttributes }
     this.memoryManager =
       config?.memoryManager instanceof MemoryManager
         ? config.memoryManager
@@ -535,6 +585,7 @@ export class Agent implements LocalAgent, InvokableAgent {
     } else {
       this.model = configuredModel ?? new BedrockModel()
     }
+    this._auxModel = resolveAuxModel(config?.auxModel)
 
     if (config?.plugins?.some((plugin) => plugin instanceof ModelRouter)) {
       throw new Error('ModelRouter must be passed through Agent({ model }), not plugins')
@@ -1140,6 +1191,37 @@ export class Agent implements LocalAgent, InvokableAgent {
    * ```
    */
   public async *stream(
+    args: InvokeArgs,
+    options?: InvokeOptions
+  ): AsyncGenerator<AgentStreamEvent, AgentResult, undefined> {
+    return yield* this._withBaggage(this._streamInvocation(args, options))
+  }
+
+  /**
+   * Drives `invocation` so every step runs with {@link Agent.baggageAttributes} merged into the active baggage.
+   */
+  private async *_withBaggage<T, R>(invocation: AsyncGenerator<T, R, undefined>): AsyncGenerator<T, R, undefined> {
+    if (Object.keys(this.baggageAttributes).length === 0) return yield* invocation
+
+    const active = otelContext.active()
+    let baggage = propagation.getBaggage(active) ?? propagation.createBaggage()
+    for (const [key, value] of Object.entries(this.baggageAttributes)) {
+      baggage = baggage.setEntry(key, { value })
+    }
+    const baggageCtx = propagation.setBaggage(active, baggage)
+
+    // Async generators resume in the caller's context, so every step must re-enter the baggage context.
+    return yield* {
+      [Symbol.asyncIterator](): AsyncGenerator<T, R, undefined> {
+        return this as AsyncGenerator<T, R, undefined>
+      },
+      next: (...args: [] | [undefined]) => otelContext.with(baggageCtx, () => invocation.next(...args)),
+      throw: (error: unknown) => otelContext.with(baggageCtx, () => invocation.throw(error)),
+      return: (value: R | PromiseLike<R>) => otelContext.with(baggageCtx, () => invocation.return(value)),
+    } as AsyncGenerator<T, R, undefined>
+  }
+
+  private async *_streamInvocation(
     args: InvokeArgs,
     options?: InvokeOptions
   ): AsyncGenerator<AgentStreamEvent, AgentResult, undefined> {

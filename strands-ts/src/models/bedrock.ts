@@ -59,16 +59,18 @@ import {
   resolveCacheSection,
   resolveConfigMetadata,
 } from '../models/model.js'
+import { THINKING_BINDING_BETA, isThinkingBindingError, thinkingWithDropBlock } from './thinking-binding.js'
 import type { ContentBlock, Message, StopReason, ToolUseBlock } from '../types/messages.js'
 import type { AudioSource, ImageSource, VideoSource, DocumentSource } from '../types/media.js'
 import type { CitationsDelta, ModelStreamEvent, ReasoningContentDelta, Usage } from '../models/streaming.js'
 import type { Citation, CitationLocation, CitationsBlockData } from '../types/citations.js'
-import type { JSONValue } from '../types/json.js'
+import type { JSONSchema, JSONValue } from '../types/json.js'
 import { ContextWindowOverflowError, ModelThrottledError, ProviderTokenCountError, normalizeError } from '../errors.js'
 import { ensureDefined } from '../types/validation.js'
 import { logger } from '../logging/logger.js'
 import { warnOnce } from '../logging/warn-once.js'
 import { NOOP_TOOL_SPEC } from '../tools/noop-tool.js'
+import { ensureStrictJsonSchema, findUnsupportedStrictKeywords } from './strict-schema.js'
 import { MODEL_DEFAULTS, defaultModelWarningMessage } from './defaults.js'
 
 const DEFAULT_BEDROCK_REGION_SUPPORTS_FIP = false
@@ -317,6 +319,24 @@ export interface BedrockModelConfig extends BaseModelConfig {
    * @defaultValue false
    */
   useNativeTokenCount?: boolean
+
+  /**
+   * Constrain the model to emit tool names and inputs that conform to each tool's schema.
+   *
+   * When `true`, every tool is sent with `strict: true` and a copy of its `inputSchema` with
+   * `additionalProperties: false` added to each object type, so a free-form `{ type: 'object' }`
+   * parameter becomes one the model can only fill with `{}`. Bedrock rejects schemas that use
+   * features outside its strict subset (recursive or external `$ref`, `minimum`/`maximum`/
+   * `multipleOf`, `minLength`/`maxLength`, `additionalProperties` other than `false`) with a 400
+   * at request time, and compiles each new schema on first use, which can take minutes.
+   * Incompatible with citations for Anthropic models.
+   *
+   * @see https://docs.aws.amazon.com/bedrock/latest/userguide/structured-output.html
+   * @see https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolSpecification.html
+   *
+   * @defaultValue false
+   */
+  strictTools?: boolean
 }
 
 /**
@@ -385,6 +405,7 @@ export interface BedrockModelOptions extends BedrockModelConfig {
 export class BedrockModel extends Model<BedrockModelConfig> {
   private _config: BedrockModelConfig
   private _client: BedrockRuntimeClient
+  private _dropStaleThinkingModelId: string | undefined
 
   /**
    * Clears the cache of model IDs for which CountTokens is skipped.
@@ -687,10 +708,12 @@ export class BedrockModel extends Model<BedrockModelConfig> {
       const request = this._formatRequest(messages, options)
       if (this._config.stream !== false) {
         // Create and send the command
-        const command = new ConverseStreamCommand(request)
-        const response = options?.cancelSignal
-          ? await this._client.send(command, { abortSignal: options.cancelSignal })
-          : await this._client.send(command)
+        const response = await this._send(request, (input) => {
+          const command = new ConverseStreamCommand(input)
+          return options?.cancelSignal
+            ? this._client.send(command, { abortSignal: options.cancelSignal })
+            : this._client.send(command)
+        })
         // Stream the response
         if (response.stream) {
           let lastStopReason: string | undefined
@@ -732,10 +755,12 @@ export class BedrockModel extends Model<BedrockModelConfig> {
           }
         }
       } else {
-        const command = new ConverseCommand(request)
-        const response = options?.cancelSignal
-          ? await this._client.send(command, { abortSignal: options.cancelSignal })
-          : await this._client.send(command)
+        const response = await this._send(request, (input) => {
+          const command = new ConverseCommand(input)
+          return options?.cancelSignal
+            ? this._client.send(command, { abortSignal: options.cancelSignal })
+            : this._client.send(command)
+        })
         for (const event of this._mapBedrockEventToSDKEvent(response)) {
           yield event
         }
@@ -750,6 +775,35 @@ export class BedrockModel extends Model<BedrockModelConfig> {
 
       // Re-throw other errors as-is
       throw error
+    }
+  }
+
+  /**
+   * Sends the request, retrying once with drop_block when an edit before replayed thinking made it stale.
+   *
+   * The retry turns drop_block on for every later request to this model, since the stale blocks stay in history.
+   *
+   * @param request - Formatted Bedrock request
+   * @param send - Sends a request to the Converse or ConverseStream API
+   * @returns The API response
+   */
+  private async _send<T>(
+    request: ConverseStreamCommandInput,
+    send: (input: ConverseStreamCommandInput) => Promise<T>
+  ): Promise<T> {
+    try {
+      return await send(request)
+    } catch (error) {
+      const isBindingError =
+        error instanceof Error && error.name === 'ValidationException' && isThinkingBindingError(error)
+      const retryFields = isBindingError ? fieldsWithDropBlock(request.additionalModelRequestFields) : undefined
+      if (!retryFields) throw error
+
+      logger.warn(
+        `model_id=<${request.modelId}> | history edit invalidated replayed thinking blocks, retrying with drop_block`
+      )
+      this._dropStaleThinkingModelId = request.modelId
+      return send({ ...request, additionalModelRequestFields: retryFields })
     }
   }
 
@@ -794,13 +848,18 @@ export class BedrockModel extends Model<BedrockModelConfig> {
     }
 
     if (toolSpecs.length > 0) {
+      const strictTools = this._config.strictTools === true
       const tools: Tool[] = toolSpecs.map(
         (spec) =>
           ({
             toolSpec: {
               name: spec.name,
               description: spec.description,
-              inputSchema: { json: spec.inputSchema },
+              inputSchema: {
+                json:
+                  strictTools && spec.inputSchema ? toStrictInputSchema(spec.name, spec.inputSchema) : spec.inputSchema,
+              },
+              ...(strictTools ? { strict: true } : {}),
             },
           }) as Tool
       )
@@ -891,7 +950,7 @@ export class BedrockModel extends Model<BedrockModelConfig> {
 
     const toolChoice = options?.toolChoice
     if (!toolChoice || 'auto' in toolChoice) {
-      return fields
+      return this._dropStaleThinkingModelId === this._config.modelId ? (fieldsWithDropBlock(fields) ?? fields) : fields
     }
 
     const { thinking: _, ...rest } = fields
@@ -2056,7 +2115,38 @@ export class BedrockModel extends Model<BedrockModelConfig> {
 }
 
 /**
- * Merges a request timeout into the caller's requestHandler options.
+ * Return additional request fields that drop stale thinking blocks, or undefined if they cannot change.
+ *
+ * @param fields - The additional model request fields
+ * @returns The fields with drop_block and its beta, or undefined
+ */
+function fieldsWithDropBlock(fields: JSONValue | undefined): Record<string, JSONValue> | undefined {
+  if (typeof fields !== 'object' || fields === null || Array.isArray(fields)) return undefined
+  const thinking = thinkingWithDropBlock(fields.thinking)
+  if (!thinking) return undefined
+  const betas = Array.isArray(fields.anthropic_beta) ? fields.anthropic_beta : []
+  const anthropicBeta = betas.includes(THINKING_BINDING_BETA) ? betas : [...betas, THINKING_BINDING_BETA]
+  return { ...fields, anthropic_beta: anthropicBeta, thinking }
+}
+
+/**
+ * Return the strict-mode copy of a tool's input schema, warning once per tool when it still uses
+ * keywords Bedrock's strict mode rejects.
+ */
+function toStrictInputSchema(toolName: string, inputSchema: JSONSchema): JSONSchema {
+  const strictSchema = ensureStrictJsonSchema(inputSchema)
+  const unsupported = findUnsupportedStrictKeywords(strictSchema)
+  if (unsupported.length > 0) {
+    warnOnce(
+      logger,
+      `tool=<${toolName}>, keywords=<${unsupported.join(',')}> | tool schema uses keywords bedrock strict mode rejects, request may fail`
+    )
+  }
+  return strictSchema
+}
+
+/**
+ * Merges a default request timeout into the caller's requestHandler options.
  *
  * The SDK's `requestHandler` slot accepts either a constructed handler instance
  * or an options bag that the SDK uses to build its default handler. We only

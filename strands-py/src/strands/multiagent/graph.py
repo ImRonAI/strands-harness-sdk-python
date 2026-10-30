@@ -19,6 +19,7 @@ import copy
 import inspect
 import logging
 import time
+import warnings
 from collections.abc import AsyncIterator, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Protocol, TypeGuard, cast
@@ -494,9 +495,11 @@ class GraphBuilder:
         if invalid_entries:
             raise ValueError(f"Entry points not found in nodes: {invalid_entries}")
 
-        # Warn about potential infinite loops if no execution limits are set
         if self._max_node_executions is None and self._execution_timeout is None:
-            logger.warning("Graph without execution limits may run indefinitely if cycles exist")
+            warnings.warn(
+                "graph has no max_node_executions or execution_timeout set; execution is unbounded",
+                stacklevel=3,
+            )
 
 
 class Graph(MultiAgentBase):
@@ -688,7 +691,9 @@ class Graph(MultiAgentBase):
                     yield event.as_dict()
 
                 # Set final status based on execution results
-                if self.state.failed_nodes:
+                if self.state.status == Status.INTERRUPTED:
+                    pass
+                elif self.state.failed_nodes:
                     self.state.status = Status.FAILED
                 elif self.state.status == Status.EXECUTING:
                     self.state.status = Status.COMPLETED
@@ -801,8 +806,6 @@ class Graph(MultiAgentBase):
             self._interrupt_state.deactivate()
 
             # Find newly ready nodes after batch execution
-            # We add all nodes in current batch as completed batch,
-            # because a failure would throw exception and code would not make it here
             newly_ready = self._find_newly_ready_nodes(current_batch)
 
             # Emit handoff event for batch transition if there are nodes to transition to
@@ -947,8 +950,15 @@ class Graph(MultiAgentBase):
         """Find nodes that became ready after the last execution.
 
         Only evaluates destination nodes of outbound edges from the completed batch,
-        instead of iterating over all nodes in the graph.
+        instead of iterating over all nodes in the graph.  Failed nodes (e.g. a
+        cancelled agent) are excluded so they cannot nominate successors — their
+        downstream branch is pruned while sibling branches continue.
         """
+        # Strip failed/cancelled nodes so their outgoing edges are never walked.
+        completed_batch = [node for node in completed_batch if node.execution_status != Status.FAILED]
+        if not completed_batch:
+            return []
+
         # Collect unique candidate nodes reachable from the completed batch
         candidates = {edge.to_node for edge in self.edges if edge.from_node in completed_batch}
 
@@ -1043,6 +1053,8 @@ class Graph(MultiAgentBase):
             elif isinstance(node.executor, AgentBase):
                 # For AgentBase implementations (Agent, A2AAgent, etc.), stream events and collect result
                 agent_response = None
+                # Captured before stream_async's finally clears it.
+                node_cancel_signal_set = False
                 async for event in node.executor.stream_async(node_input, invocation_state=invocation_state):
                     # Forward agent events with node context
                     wrapped_event = MultiAgentNodeStreamEvent(node.node_id, event)
@@ -1050,6 +1062,8 @@ class Graph(MultiAgentBase):
                     # Capture the final result event
                     if "result" in event:
                         agent_response = event["result"]
+                        signal = getattr(node.executor, "cancel_signal", None)
+                        node_cancel_signal_set = signal is not None and signal.is_set()
 
                 # Use the captured result from streaming (no double execution)
                 if agent_response is None:
@@ -1065,11 +1079,19 @@ class Graph(MultiAgentBase):
                 # Handle stop_reason and interrupts (use getattr for AgentBase compatibility)
                 stop_reason = getattr(agent_response, "stop_reason", "end_turn")
                 interrupts = getattr(agent_response, "interrupts", None) or []
+                # Immediate cancel (signal set) is an abort → FAILED; the stop tool's deferred
+                # cancel never sets the signal and resolves as a normal completion.
+                if stop_reason == "cancelled":
+                    agent_status = Status.FAILED if node_cancel_signal_set else Status.COMPLETED
+                elif stop_reason == "interrupt":
+                    agent_status = Status.INTERRUPTED
+                else:
+                    agent_status = Status.COMPLETED
 
                 node_result = NodeResult(
                     result=agent_response,
                     execution_time=round((time.time() - start_time) * 1000),
-                    status=Status.INTERRUPTED if stop_reason == "interrupt" else Status.COMPLETED,
+                    status=agent_status,
                     accumulated_usage=usage,
                     accumulated_metrics=metrics,
                     execution_count=1,

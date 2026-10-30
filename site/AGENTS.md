@@ -62,11 +62,13 @@ When authoring or reviewing documentation pages, follow the voice guide and the 
 ├── SITE-ARCHITECTURE.md          # Detailed Astro/Starlight customizations
 ├── src/                          # Astro source files
 │   ├── components/               # Custom Astro components
+│   │   ├── CourseNotice.astro    # Course recording and example update notices
 │   │   ├── community/            # Sections of the /community/ hub page (hero, courses, events, blog)
 │   │   ├── overrides/            # Starlight component overrides
 │   │   └── ...
 │   ├── config/                   # Site configuration
 │   ├── content/                  # Content collections
+│   │   ├── announcements/        # Homepage announcement banner entries (one YAML each, auto-expire after 14 days)
 │   │   ├── catalog/              # Community catalog entries (one YAML per integration, zod-validated)
 │   │   ├── courses/              # Course metadata (one YAML per course, zod-validated)
 │   │   ├── events/               # Community event entries (one YAML per event, zod-validated)
